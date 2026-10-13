@@ -21,6 +21,8 @@ const sec = k => typeof k === 'number' ? SECTIONS[k] : SECTIONS.find(s => s.name
 // Standalone loops (model sheets, GIFs, tests), outside the main timeline: window.LOOP = LOOPS[name] swaps the whole
 // frame for that function, called with loop time. Give each a length: LOOPS.x = t => { ... }; LOOPS.x.len = 4;
 const LOOPS = {};
+// Guests a later Chapter brings back (a curtain call): CAST.name = (x, y, u, pose) => …, set by the Chapter that introduces them.
+const CAST = {};
 
 function drawWorld(t) {
   KARAOKE = null; window.OVER_TEXT = null;

@@ -1,41 +1,57 @@
-# Claude Animation Base
+# MVTemplate
 
-This is a small starter kit with code, instructions and assets for animating a character in [p5.js](https://p5js.org) and [p5.brush](https://github.com/acamposuribe/p5.brush) with Claude Opus 5.5. It's based on the code from the music video [I'm Upping My P(doom)](https://github.com/JohnHeibel/PDoomVideo) and an analysis of what the model did and didn't do well. I highly recommend playing around with your prompting: make it give you the storyboard before coding, give it very broad instructions, try being very specific, ask for subagents, and try a bunch of other fun ways of testing the model's capabilities. In my testing, it can do a lot with very little, but it's also quite accurate when you give it more requirements. Also try asking the model to swap out the character or make new emotions or costumes, give it your own reference images, and try many other fun things like that. I've found that the reasoning level corresponds to how "extravagant" and detail-oriented the model makes the scene. All test videos were generated with Opus 5.5 on xhigh reasoning in Claude Code.
+A template for making a hand-painted music video with Claude. Copy it once per MV, put a song and its lyrics in `song/`, and ask:
 
-![Clawd's emotions, animated](docs/emotions.webp)
+> Read GUIDE.md, then make an MV for this song: a robot learning to dance.
 
-## Make a video
+Claude analyses the song (when each line is sung, every beat and bar, the sections), writes a storyboard, designs the characters, builds the video chapter by chapter in [p5.js](https://p5js.org) and [p5.brush](https://github.com/acamposuribe/p5.brush), and renders it with the song. It stops at five Gates for you to approve:
 
-Clone it, open it in Claude Code (or any coding agent) and ask for what you want:
+| Gate | you get | you check |
+|---|---|---|
+| Song Check | `out/check/songcheck.mp4`: the song with beat clicks, sections and karaoke | the timing is right |
+| Storyboard | `mv/STORYBOARD.md` | the idea, the shots, the open questions |
+| Model Sheets | each lead character's views and emotions | the characters |
+| First Chapter | a clip of the first chapter | the look and the pace |
+| Rough Cut | `out/rough/rough.mp4`, half size, 12 fps | the whole thing against the song |
 
-> Read ANIMATION_GUIDE.md, then make a 15-second video of Clawd trying to catch a butterfly.
+Then it renders `out/final/<title>.mp4`.
 
-The model storyboards first, builds shot by shot, renders contact sheets to check its own work, and writes `out/video.mp4`. [ANIMATION_GUIDE.md](ANIMATION_GUIDE.md) holds the rules it follows: handmade, alive, one piece, no text, transitions always, something happens in every scene, and a solid medium of brush strokes, flat 2D and boiling linework. It also covers timing for the viewer and the core principles of character animation.
+It grew out of [ClaudeAnimationBase](https://github.com/JohnHeibel/ClaudeAnimationBase) (the character kit, the watercolour medium and the animation guide) and the music video [I'm Upping My P(doom)](https://github.com/JohnHeibel/PDoomVideo), which is the worked example in `examples/pdoom/`.
 
-## Run it yourself
+## You need
 
-You need Node.js, Google Chrome and ffmpeg.
-
-Without a dedicated GPU, p5.brush's watercolour fills make render times fairly slow, measured in seconds per frame. If you're running on integrated graphics, I recommend asking the model to avoid those fills and replace them with something else appropriate. (I love the look of the watercolours, though.)
+- Node.js, Google Chrome, ffmpeg
+- [uv](https://docs.astral.sh/uv/) for the song analysis (Python 3.12, PyTorch, Whisper large-v3, HTDemucs, beat_this, the MMS aligner; about 5 GB of models, downloaded on first use). Apple Silicon or Linux.
 
 ```bash
 npm install
-node render.mjs --clip --out=out/video.mp4
+uv sync --project tools/song
 ```
 
-That renders the 11-second demo in [src/scenes/demo.js](src/scenes/demo.js). Open [studio.html](studio.html) in Chrome to scrub through it. Add `?loop=emotions` or `?loop=views` to see the model sheets. If Chrome isn't in a standard location, pass `--chrome=<path>` or set `CHROME_PATH`.
+## By hand
 
-On Linux, `render.mjs` starts Chrome with `--no-sandbox` (Ubuntu 23.10+ blocks Chrome's sandbox in headless use) and also finds a Chromium installed by Playwright. With no GPU at all, add `--soft-gl` to render WebGL in software: slow on watercolour fills, but it works. On a headless Linux machine with an NVIDIA GPU (a cloud or cluster node), add `--gpu-angle=gl-egl` (or `vulkan`); `node gpu_probe.mjs <chrome path>` shows which renderer each set of flags gets.
+```bash
+uv run --project tools/song python tools/song/analyze.py song   # song/song.json
+node engine/render.mjs --songcheck                              # the Song Check video
+node engine/build.mjs && open studio.html                       # scrub or play along in Chrome
+node engine/render.mjs --rough                                  # the Rough Cut
+node engine/render.mjs --final                                  # the MV
+```
+
+Every render command takes `--mv=<folder>` for an MV kept elsewhere, e.g. `--mv=examples/pdoom`.
 
 ## What's here
 
 | path | what it is |
 |---|---|
-| [ANIMATION_GUIDE.md](ANIMATION_GUIDE.md) | The rules, the workflow and the full API. Read it first. |
-| [src/clawd.js](src/clawd.js) | Clawd: views, emotions, eyes, mouths, hats, emotes, dances |
-| [src/core.js](src/core.js) | Painting, timing, motion helpers, camera, light, paper |
-| [src/timeline.js](src/timeline.js) | Shots, loops and the brush-wipe transition |
-| [src/config.js](src/config.js) | Length and tempo |
-| [src/scenes/](src/scenes/) | Your video goes here (the demo is an example) |
-| [render.mjs](render.mjs) | Headless renderer: contact sheets, frame strips, crops, stills, MP4 |
-| [docs/](docs/) | Model sheets: [emotions](docs/emotions.jpg) (also [animated](docs/emotions.webp)) and [views, motion and hats](docs/views.jpg) |
+| [GUIDE.md](GUIDE.md) | The workflow, the rules and the engine. Claude reads it first. |
+| [GLOSSARY.md](GLOSSARY.md) | The words the guide and code use (MV, Song, Section, Chapter, Shot, Seam, Gate…) |
+| [docs/adr/](docs/adr/) | Why it's built this way |
+| `song/` | Your song and lyrics, and the analysis (`song.json`) |
+| `mv/` | Your MV: `mv.json` (format, style, karaoke), the storyboard, characters and chapters |
+| [engine/](engine/) | Beat grid, timeline, karaoke, acting tools, build and render |
+| [styles/](styles/) | Style Profiles: how paint lands on the frame. [watercolor/](styles/watercolor/STYLE.md) |
+| [tools/song/](tools/song/) | The song analysis |
+| [examples/clawd/](examples/clawd/) | Clawd, an example character with 31 emotions |
+| [examples/pdoom/](examples/pdoom/) | The P(doom) song analysed, its Researcher, and its first chapters |
+| `studio.html` | Scrub or play an MV in Chrome |
