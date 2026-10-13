@@ -1,0 +1,22 @@
+[project]
+name = "mv-song-tools"
+version = "0.1.0"
+description = "Song analysis for an MV: vocal separation, lyric timing, beat grid, sections."
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "demucs>=4.1",
+  "openai-whisper>=20250625",
+  "beat-this>=1.1",
+  "numpy",
+  "soundfile",
+  "opencc-python-reimplemented",
+  "uroman",
+  "pykakasi",
+  "torch==2.8.*",
+  "torchaudio==2.8.*",
+]
+
+[tool.uv]
+package = false
+# Apple Silicon and Linux only: demucs pins an old torch on Intel Macs.
+environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'", "sys_platform == 'linux'"]
