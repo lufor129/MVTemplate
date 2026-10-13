@@ -1,14 +1,22 @@
-// clawd.js: Clawd, painted in watercolour and ink. The silhouette is blocky: a 10×6 body, four stubby legs, two little
-// arm nubs and two slit eyes. `u` is the body unit (the body is 10u wide and 8u tall with legs). (x, y) is the point on
-// the ground between the feet.
+// clawd.js: Clawd, the example Character: a terracotta block painted in watercolour and ink. Not part of the engine;
+// an MV uses it by listing it in mv/mv.json ("characters": ["examples/clawd/clawd.js"]), or copies it into
+// mv/characters/ to change it. It shows how a Character meets the Character Contract (engine/acting.js).
+//
+// The silhouette is blocky: a 10×6 body, four stubby legs, two little arm nubs and two slit eyes. `u` is the body unit
+// (the body is 10u wide and 8u tall with legs). (x, y) is the point on the ground between the feet.
 //
 // Body-local coordinates in the front view, used by the o.draw / o.armL / o.armR hooks:
 //   body x -5u..5u, y -8u..-2u; eye centres (±2.5u, -6u), each 1u wide and 2u tall; mouth near (0, -4.3u); legs reach y 0.
 //   Arms pivot at (±4.9u, -4.5u) and are 2.2u long. o.armL / o.armR are called at the arm TIP in arm space (x runs
 //   outward along the arm), so a held prop just draws around (0, 0).
 //
-// Everything here draws one frame. Motion comes from what you pass in: feel() / emotions() for moods, move() for
-// dances, turn() for turns, and jump() / take() / stroll() / spring() from core.js for acting.
+// Clawd's own pose fields, beyond the standard ones (engine/acting.js):
+//   view:   front | q | side | qback | back
+//   face:   eyes (a name, or [left, right] for mismatched eyes), mouth, blush 0..1, gloom 0..1 (dark forehead with gloom
+//           lines), lid 0..1 (lunchbox mouth, front view only), seed (blink timing)
+//   body:   sx, sy, noLegs, noShadow, swMul (outline weight)
+//   colour: col / dk / lt, or tint (pale, flush, blue, rosy, green, gold, or any hex) + tintK
+//   extras: hat, draw(u, sw), armL(u, sw), armR(u, sw)
 
 // ---------- views ----------
 // Turns are drawn KEY VIEWS, like a cartoon model sheet, never a rotated 3D box. Every view faces screen-right;
@@ -29,19 +37,6 @@ const VIEWS = {
   back:  { L: -5, R: 5, face: null, hat: 0, hw: 1, back: true,
            legs: [[-4, 0], [-2, 0], [1, 0], [3, 0]], arms: [[-4.9, -1, 'R', 0], [4.9, 1, 'L', 0]] },
 };
-// Key view for a heading in turns: 0 = front, .25 = facing right, .5 = back, .75 (or -.25) = facing left.
-// Snaps to the nearest eighth, which is how a drawn turn works: front → q → side, one drawing per step.
-function spinView(a) {
-  const K = [['front', 0], ['q', 0], ['side', 0], ['qback', 0], ['back', 0], ['qback', 1], ['side', 1], ['q', 1]];
-  const [view, f] = K[((Math.round(a * 8) % 8) + 8) % 8]; return { view, flip: !!f };
-}
-// A turn from heading a0 to a1 (in turns) between t0 and t1. It steps through the key views and smears the
-// in-between drawings. Spread it into clawd(): clawd(x, y, u, { ...feel('happy', t), ...turn(t, 2, 2.2, 0, .25) }).
-function turn(t, t0, t1, a0, a1) {
-  const k = ease(seg(t, t0, t1)), v = spinView(lerp(a0, a1, k));
-  return { ...v, smear: t > t0 && t < t1 ? .55 * Math.sin(k * Math.PI) : 0, smearDir: 0 };
-}
-
 // ---------- colour ----------
 // Tints shift the body colour with the mood. tint: a name here or any hex colour; tintK: 0..1 strength.
 const TINT = { pale: '#F6E6D2', flush: '#E23E36', blue: '#6D86BE', rosy: '#EF8EA8', green: '#98B25E', gold: '#F0BE46' };
@@ -52,19 +47,12 @@ function tintCols(o) {
   return { col: mixCol(c.col, tc, .55 * k), dk: mixCol(c.dk, mixCol(tc, PAL.ink, .35), .5 * k), lt: mixCol(c.lt, mixCol(tc, '#FFFFFF', .4), .45 * k) };
 }
 
-// ---------- Clawd ----------
-// Options (all optional):
-//   pose:   dx, dy (in u; negative dy = up), sq (squash; negative stretches), rot (pivots at the feet), flip, sx, sy,
-//           aL, aR (arm raise angles: 0 = straight out, + = up, - = down), walk (phase; the legs step), noLegs, noShadow
-//   view:   front | q | side | qback | back (see VIEWS). smear 0..1 + smearDir ±1 (0 = both sides) for fast moves
-//   face:   eyes (a name, or [left, right] for mismatched eyes), mouth, lookX / lookY (-1..1), squint 0..1, blush 0..1,
-//           gloom 0..1 (dark forehead with gloom lines), lid 0..1 (lunchbox mouth, front view only), seed (blink timing)
-//   colour: col / dk / lt, or tint + tintK
-//   extras: hat, emote + emoteK (0..1 pop) + emoteAge (s since it appeared), draw(u, sw), armL(u, sw), armR(u, sw)
-//   boil:   boilKey (a stable id for its boil seeds; defaults to call order, so set it if characters come and go mid-shot)
-function clawd(x, y, u, o = {}) {
+// ---------- drawing one frame ----------
+// Everything here draws one frame. Motion comes from what you pass in: clawd.feel() / clawd.emotions() for moods,
+// clawd.dance() for dances, clawd.turn() for turns, and jump() / take() / spring() for acting.
+function drawClawd(x, y, u, o) {
   // each part boils from its own seed (see boilSeed), so a moving arm never re-boils the body, or the next character
-  const id = o.boilKey ?? ++CLAWD_N, rs = part => boilSeed(`clawd ${id} ${part}`);
+  const id = o.boilKey, rs = part => boilSeed(`${id} ${part}`);
   x += (o.dx || 0) * u;
   const V = VIEWS[o.view] || VIEWS.front;
   const dy = (o.dy || 0) * u, sq = (o.sq || 0) + (o.take || 0), sm = clamp(o.smear || 0);
@@ -145,13 +133,6 @@ function clawd(x, y, u, o = {}) {
   rs('draw'); if (o.draw) o.draw(u, sw);
   pop();
 
-  rs('emote');
-  if (o.emote) {
-    const top = EMOTE_TOP.includes(o.emote), dir = o.flip ? -1 : 1;
-    const ex = top ? x + dir * V.hat * u : x + dir * (V.R + .4) * u, ey = y + dy + (top ? -10.4 : -8.6) * u * (1 - sq);
-    emote(o.emote, ex, ey, u * .9, o.emoteK ?? 1, o.emoteAge ?? T);
-  }
-  rs('after');   // so whatever is drawn next doesn't depend on this pose
 }
 
 // The lunchbox mouth: the top 2.9u of the body hinges open at the back-left corner (front view only). The mouth is the
@@ -424,119 +405,9 @@ function faceHat(u, h, sw, sides) {
   }
 }
 
-// ---------- emotes ----------
-// Painted reaction marks, never lettering: ! ? !! !? zzz sweat spark heart hearts anger steam bulb dots scribble
-// music swirl stars cloud. k = 0..1 pop-in progress (with overshoot); age = seconds since it appeared (drives the
-// looping ones). Emotes in EMOTE_TOP sit over the head; the rest sit by its top corner.
-const EMOTE_TOP = ['steam', 'stars', 'cloud', 'bulb', 'scribble'];
-function emote(kind, x, y, s, k = 1, age = T) {
-  const p = backOut(k); if (p < .02) return;
-  const sw = clamp(s / 15, .4, 2), P = pts => pts.map(([a, b]) => [a * s, b * s]);
-  const dot = (dx, col) => paint(ellPts(dx, 1.25 * s, .42 * s, .42 * s, 12), { wash: col, ink: PAL.ink, sw: sw * .7 });
-  const bang = (dx, col) => {
-    push(); translate(dx, 0); rotate(.1 + .08 * Math.sin(age * 16) * Math.exp(-age * 3));
-    paint(P([[-.62, -2.3], [.62, -2.3], [.22, .45], [-.22, .45]]), { wash: col, fill: PAL.cream, fillOp: 70, ink: PAL.ink, sw: sw * .8, curv: .25 }); dot(0, col);
-    pop();
-  };
-  const quest = (dx, col) => {
-    push(); translate(dx, 0); rotate(-.08 + .08 * Math.sin(age * 12) * Math.exp(-age * 3));
-    paint(ribbon(P([[-1, -1.3], [-.55, -2.15], [.35, -2.3], [1, -1.6], [.7, -.75], [.05, -.3], [0, .4]]), .75 * s, .5 * s), { wash: col, fill: PAL.cream, fillOp: 60, ink: PAL.ink, sw: sw * .8 });
-    dot(0, col); pop();
-  };
-  push(); translate(x, y); scale(p);
-  switch (kind) {
-    case '!': bang(0, PAL.ochre); break;
-    case '?': quest(0, PAL.sky); break;
-    case '!!': bang(-.8 * s, PAL.ochre); bang(.9 * s, PAL.ochre); break;
-    case '!?': bang(-.9 * s, PAL.ochre); quest(1 * s, PAL.sky); break;
-    case 'zzz': for (let i = 0; i < 3; i++) {   // painted Z shapes drifting up and away
-      const ph = frac(age * .4 + i / 3), a = Math.sin(ph * Math.PI), zs = (.8 + ph * .7) * s * Math.min(1, a * 1.6);
-      if (a < .12) continue;
-      const zx = ph * 2.6 * s, zy = -ph * 4.2 * s, Z = [[-.6, -.6], [.6, -.6], [.6, -.28], [-.12, .3], [.6, .3], [.6, .6], [-.6, .6], [-.6, .28], [.12, -.3], [-.6, -.3]];
-      push(); translate(zx, zy); rotate(-.15 + .1 * Math.sin(age * 2 + i));
-      paint(Z.map(([a, b]) => [a * zs, b * zs]), { wash: PAL.cream, fill: PAL.sky, fillOp: 70, ink: PAL.ink, sw: sw * .7 });
-      pop();
-    } break;
-    case 'sweat': for (const [dx, dy, r] of [[0, 0, 1], [1.6, 1.4, .7]])
-      paint(P([[dx, dy - 1.6 * r], [dx + .9 * r, dy + .2], [dx, dy + .9 * r], [dx - .9 * r, dy + .2]]), { wash: PAL.sky, fill: '#FFFFFF', fillOp: 60, ink: PAL.ink, sw: sw * .6, curv: .7 });
-      break;
-    case 'spark': {
-      const tw = 1 + .15 * Math.sin(age * 12);
-      paint(starPts(0, 0, 1.6 * s * tw), { wash: PAL.cream, fill: PAL.ochre, fillOp: 80, ink: PAL.ink, sw: sw * .5 });
-      paint(starPts(1.9 * s, 1.2 * s, .8 * s / tw), { wash: PAL.ochre, ink: PAL.ink, sw: sw * .4 });
-      break;
-    }
-    case 'heart': paint(heartPts(0, 0, s * 1.8 * (1 + .12 * pulse(age + OFF))), { wash: '#E2476E', fill: PAL.rose, fillOp: 90, ink: PAL.ink, sw: sw * .6 }); break;
-    case 'hearts': for (let i = 0; i < 3; i++) {
-      const ph = frac(age * .55 + i / 3), a = Math.sin(ph * Math.PI); if (a < .1) continue;
-      paint(heartPts((Math.sin(ph * 6 + i * 2) * .7 + i * .7 - .7) * s, -ph * 3.8 * s, s * (.5 + .6 * a)), { wash: '#E2476E', fill: PAL.rose, fillOp: 90, ink: PAL.ink, sw: sw * .5 });
-    } break;
-    case 'anger': {   // the comic "vein pop": four curved strokes, each bowed in toward the centre
-      const b = 1 + .15 * pulse(age + OFF, 8);
-      for (let i = 0; i < 4; i++) { push(); rotate(i * Math.PI / 2 + Math.PI / 4); scale(b); inkLine(P([140, 160, 180, 200, 220].map(d => [2.1 + 1.3 * Math.cos(d * Math.PI / 180), 1.3 * Math.sin(d * Math.PI / 180)])), sw * 1.1, '#D8394E', 'ink', .6); pop(); }
-      break;
-    }
-    case 'steam': for (const sd of [-1, 1]) for (let j = 0; j < 2; j++) {
-      const ph = frac(age / .7 + j * .5 + (sd > 0 ? .25 : 0)), r = (.55 + ph * .9) * s, cx = sd * (3.2 + ph * 1.8) * s, cy = (1 - ph * 3) * s;
-      const puff = []; for (let i = 0; i < 18; i++) { const a = i / 18 * TAU, bump = 1 + .22 * Math.abs(Math.sin(a * 2.5)); puff.push([cx + Math.cos(a) * r * bump, cy + Math.sin(a) * r * .8 * bump]); }
-      paint(puff, { wash: PAL.cream, washOp: 255 * (1 - ph * .8), ink: ph < .6 ? PAL.ink : null, sw: sw * .5 });
-    } break;
-    case 'bulb': {
-      const gl = .5 + .5 * Math.sin(age * 10);
-      glow(0, -1.4 * s, 4.5 * s, '#FFD27A', .75 + .25 * gl);
-      for (let i = 0; i < 7; i++) { const a = -Math.PI / 2 + (i - 3) * .45, r0 = 1.6 * s, r1 = (2.2 + .4 * gl) * s; inkLine([[Math.cos(a) * r0, -1.4 * s + Math.sin(a) * r0], [Math.cos(a) * r1, -1.4 * s + Math.sin(a) * r1]], sw * .8, PAL.ochre, 'ink', 0); }
-      paint(ellPts(0, -1.4 * s, 1.15 * s, 1.2 * s, 16), { wash: '#FFE68A', fill: PAL.cream, fillOp: 90, ink: PAL.ink, sw: sw * .7 });
-      paint(rectPts(-.5 * s, -.3 * s, s, .8 * s), { wash: '#9A93A8', ink: PAL.ink, sw: sw * .6 });
-      break;
-    }
-    case 'dots': for (let i = 0; i < 3; i++) {
-      const ph = frac(age / 1.8), q = backOut(clamp((ph - i * .22) * 6)); if (q < .02) continue;
-      paint(ellPts((i - 1) * 1.3 * s, 0, .42 * s * q, .42 * s * q, 10), { wash: PAL.ink, ink: null });
-    } break;
-    case 'scribble': {
-      const pts = []; for (let i = 0; i < 34; i++) { const a = i * .95, r = (1.1 + .5 * Math.sin(i * 1.7)) * s; pts.push([Math.cos(a) * r * 1.5 + jit(.2 * s), Math.sin(a) * r * .8 + jit(.2 * s)]); }
-      inkLine(pts, sw * .8, PAL.ink, 'ink', .7); break;
-    }
-    case 'music': {
-      const b = Math.sin(age * 5) * .3 * s;
-      push(); translate(0, b); rotate(.1 * Math.sin(age * 5));
-      paint(ellPts(0, 1.2 * s, .7 * s, .5 * s, 12, 0, -.3), { wash: PAL.ink, ink: null });
-      inkLine(P([[.6, 1.1], [.6, -1.6], [1.6, -1]]), sw * .8, PAL.ink, 'ink', 0);
-      pop();
-      const b2 = Math.sin(age * 5 + 2) * .3 * s;
-      paint(ellPts(2.2 * s, 2.2 * s + b2, .45 * s, .33 * s, 10, 0, -.3), { wash: PAL.ink, ink: null });
-      inkLine([[2.6 * s, 2.15 * s + b2], [2.6 * s, .6 * s + b2]], sw * .6, PAL.ink, 'ink', 0);
-      break;
-    }
-    case 'swirl': {
-      const sp = []; for (let i = 0; i < 18; i++) { const a = i * .6 + age * 5, r = i * .09 * s; sp.push([Math.cos(a) * r, Math.sin(a) * r]); }
-      inkLine(sp, sw * .7, PAL.violet, 'inkfine', .6); break;
-    }
-    case 'stars': for (let i = 0; i < 3; i++) {   // little stars circling the head
-      const a = age * 5 + i * TAU / 3, d = .75 + .25 * Math.sin(a);
-      paint(starPts(Math.cos(a) * 4.2 * s, Math.sin(a) * s, .75 * s * d, .45, 5, age * 3), { wash: PAL.ochre, fill: PAL.cream, fillOp: 60, ink: PAL.ink, sw: sw * .5 });
-    } break;
-    case 'cloud': {   // a little rain cloud of its own
-      const bob = Math.sin(age * 2) * .15 * s, c = [];
-      for (let i = 0; i < 40; i++) {
-        const a = i / 40 * TAU, up = Math.sin(a) < 0, r = up ? 1 + .38 * Math.pow(Math.abs(Math.sin(a * 3)), .6) : 1;
-        c.push([Math.cos(a) * 2.8 * s * (up ? r * .92 : 1), bob - .2 * s + Math.sin(a) * (up ? 1.35 : .7) * s * r]);
-      }
-      for (let i = 0; i < 6; i++) { const ph = frac(age * 2.4 + hash(i)), rx = (-2 + i * .8) * s, ry = (.7 + ph * 2) * s; inkLine([[rx, ry], [rx - .12 * s, ry + .7 * s]], sw * 1.1, mixCol(PAL.sky, PAL.indigo, .3), 'ink', 0); }
-      paint(c, { wash: '#A3A8C4', fill: PAL.indigo, fillOp: 70, bleed: .1, ink: PAL.ink, sw: sw * .8, curv: .4 });
-      break;
-    }
-  }
-  pop();
-}
-// Heart outline points, centred at (cx, cy), about 2r wide.
-function heartPts(cx, cy, r, n = 22) {
-  const p = []; for (let i = 0; i < n; i++) { const a = i / n * TAU; p.push([cx + 16 * Math.pow(Math.sin(a), 3) * r / 16, cy - (13 * Math.cos(a) - 5 * Math.cos(2 * a) - 2 * Math.cos(3 * a) - Math.cos(4 * a)) * r / 16]); } return p;
-}
-
 // ---------- emotions ----------
 // Each emotion is a face AND a way of moving. body(t) returns pose offsets for clawd(), and every one is alive: it
-// moves on its own, at its own energy, locked to the beat (PROJECT.bpm). take = how big the reaction is when Clawd
+// moves on its own, at its own energy, locked to the beat (the Beat Grid). take = how big the reaction is when Clawd
 // switches INTO this emotion. fade = the emote is a one-off that fades out instead of staying.
 const _b = t => { const bp = bpOf(t), s1 = Math.sin(bp * Math.PI); return { bp, s1, ab: Math.abs(s1), hit: pulse(t), s2: Math.sin(bp * TAU), f: frac(bp) }; };
 const EMO = {
@@ -573,72 +444,23 @@ const EMO = {
   hopeful:    { eyes: 'shine', mouth: 'cat', blush: .35, take: .5, body: t => { const b = _b(t); return { sq: -.06 - .02 * b.ab, dy: -.25 * b.ab, lookY: -.4, aL: .5 + .05 * b.s1, aR: .5 - .05 * b.s1, rot: .03 * Math.sin(b.bp * Math.PI / 2) }; } },
 };
 
-// One emotion, alive at time t: face, colour and body motion together. Spread it into clawd():
-//   clawd(x, y, u, feel('happy', t))       clawd(x, y, u, { ...feel('sad', t), view: 'q', hat: 'beanie' })
-function feel(name, t, over = {}) {
-  const E = EMO[name] || EMO.neutral;
-  return { eyes: E.eyes, mouth: E.mouth, tint: E.tint, tintK: E.tintK ?? 1, blush: E.blush || 0, gloom: E.gloom || 0,
-           lid: E.lid || 0, emote: E.emote, ...(E.body ? E.body(t) : {}), ...over };
-}
 
-// An emotion timeline with ACTED changes: keys = [[t0, 'neutral'], [t1, 'surprised'], [t2, 'happy', { emote: 'music' }]].
-// Around each change the eyes squeeze shut and the body squashes just before (anticipation), and the face swaps
-// under the squint. Then a take fires (a squash-stretch the size of the new emotion's `take`), the body settles into
-// its new motion with overshoot, colour, blush and gloom cross-fade, and the new emote pops in. o.take scales every take.
-// Spread the result into clawd() and add any other pose: clawd(x, y, u, { ...emotions(t, keys), view: 'q' }).
-function emotions(t, keys, o = {}) {
-  let i = 0; while (i + 1 < keys.length && t >= keys[i + 1][0]) i++;
-  const [tc, name, over] = keys[i], age = t - tc, cur = feel(name, t, over);
-  const tn = i + 1 < keys.length ? keys[i + 1][0] : Infinity, tkS = o.take ?? 1;
-  const E = EMO[name] || EMO.neutral;
-  let squint = cur.squint || 0;
-  if (tn - t < .1) squint = Math.max(squint, 1 - (tn - t) / .1);
-  if (i > 0 && age < .14) squint = Math.max(squint, 1 - age / .14);
-  const prev = i > 0 ? feel(keys[i - 1][1], t, keys[i - 1][2]) : null;
-  if (prev && age < .5) {
-    const base = { dy: 0, sq: 0, aL: .2, aR: .2, rot: 0, dx: 0, lookX: 0, lookY: 0 };
-    const k = backOut(seg(age, 0, .4)), kc = ease(seg(age, 0, .3));
-    for (const f in base) cur[f] = lerp(prev[f] ?? base[f], cur[f] ?? base[f], k);
+const clawd = character({
+  name: 'clawd',
+  size: [10, 8],
+  views: ['front', 'q', 'side', 'qback', 'back'],
+  emotions: EMO,
+  rest: { dy: 0, sq: 0, aL: .2, aR: .2 },
+  fades: ['blush', 'gloom', 'lid'],
+  // body colours cross-fade between emotions (each emotion has its own tint)
+  mix(prev, cur, k) {
     const a = tintCols(prev), b = tintCols(cur);
-    cur.col = mixCol(a.col, b.col, kc); cur.dk = mixCol(a.dk, b.dk, kc); cur.lt = mixCol(a.lt, b.lt, kc); cur.tint = null;
-    for (const f of ['blush', 'gloom', 'lid']) cur[f] = lerp(prev[f] || 0, cur[f] || 0, kc);
-  }
-  // takes: the one this key fires, plus the anticipation squash of the next one
-  const t1 = prev ? take(t, tc, (E.take ?? .6) * tkS) : { sq: 0, dy: 0 };
-  const En = i + 1 < keys.length ? EMO[keys[i + 1][1]] || EMO.neutral : null, t2 = En ? take(t, tn, (En.take ?? .6) * tkS) : { sq: 0, dy: 0 };
-  cur.sq = (cur.sq || 0) + t1.sq + t2.sq; cur.dy = (cur.dy || 0) + t1.dy + t2.dy;
-  cur.squint = squint;
-  // the emote pops in after the swap (it carries on if the emote didn't change); one-off emotes fade out
-  const same = prev && prev.emote === cur.emote;
-  cur.emoteK = same ? 1 : seg(age, .06, .32) * (E.fade && !(over && over.emote) ? 1 - seg(age, 1.4, 1.8) : 1);
-  cur.emoteAge = age;
-  return cur;
-}
-
-// ---------- moves ----------
-// Beat-locked dances: bounce, hop, roof (arms up), sway, spin (a drawn spin through the key views, once a bar), wave,
-// walk, run, idle, stomp, shimmy, mix (changes every two bars). Returns pose offsets; spread into clawd().
-function move(style, t, seed = 0) {
-  const bp = bpOf(t), bi = Math.floor(bp), bf = bp - bi, hit = Math.max(0, 1 - bf * 3.5), s1 = Math.sin(bp * Math.PI), ab = Math.abs(s1);
-  const o = { dy: 0, sq: 0, aL: .2, aR: .2, rot: 0, walk: null, dx: 0 };
-  if (style === 'mix') style = ['bounce', 'roof', 'sway', 'spin', 'hop', 'wave'][(Math.floor(bp / 8) + seed) % 6];
-  switch (style) {
-    case 'bounce': o.dy = -ab * 1.6; o.sq = hit * .12; o.aL = .4 + s1; o.aR = .4 - s1; break;
-    case 'hop': o.dy = -ab * 4; o.sq = hit * .18; o.aL = o.aR = .3 + ab * 1.1; break;
-    case 'roof': o.dy = -ab * 1.2; o.sq = hit * .1; o.aL = o.aR = 1.25 + .3 * Math.sin(bp * TAU); break;
-    case 'sway': o.dx = s1 * 3; o.rot = s1 * .12; o.aL = .5 + .6 * s1; o.aR = .5 - .6 * s1; o.sq = hit * .08; break;
-    case 'spin': {
-      const ph = (((bi % 4) + 4) % 4 === 3) ? bf : 0;
-      Object.assign(o, spinView(ph)); o.smear = ph > .1 && ph < .9 ? .5 : 0; o.smearDir = 0;
-      o.dy = -Math.sin(ph * Math.PI) * 3 - ab; o.aL = o.aR = .6 + ph; o.sq = hit * .1; break;
-    }
-    case 'wave': o.dy = -ab; o.aL = 1.1 + .5 * Math.sin(bp * TAU * 2); o.aR = -.2; o.sq = hit * .08; break;
-    case 'walk': o.walk = bp / 2; o.dy = -ab * .6; o.aL = .3 * s1; o.aR = -o.aL; break;
-    case 'run': o.walk = bp * 1.5; o.dy = -Math.abs(Math.sin(bp * TAU)); o.aL = .8 * Math.sin(bp * TAU * 1.5); o.aR = -o.aL; o.rot = -.08; break;
-    case 'idle': o.dy = -ab * .5; o.sq = hit * .05; break;
-    case 'stomp': o.dy = -Math.max(0, Math.sin(bp * TAU)) * 1.4; o.sq = hit * .2; o.rot = (bi % 2 ? 1 : -1) * .06 * hit; o.aL = o.aR = -.3 + hit * .9; break;
-    case 'shimmy': o.dx = Math.sin(bp * TAU * 2) * .6; o.rot = Math.sin(bp * TAU * 2) * .05; o.aL = .9 + .4 * Math.sin(bp * TAU * 2); o.aR = .9 - .4 * Math.sin(bp * TAU * 2); o.dy = -ab * .5; break;
-  }
-  return o;
-}
-function dancer(x, y, u, style, t, extra = {}) { clawd(x, y, u, { ...move(style, t, extra.seed || 0), ...extra }); }
+    return { col: mixCol(a.col, b.col, k), dk: mixCol(a.dk, b.dk, k), lt: mixCol(a.lt, b.lt, k), tint: null };
+  },
+  draw: drawClawd,
+  // emotes sit by the top corner of the body, or over the hat
+  emoteAt(x, y, u, o, top) {
+    const V = VIEWS[o.view] || VIEWS.front, dir = o.flip ? -1 : 1, dy = (o.dy || 0) * u, sq = (o.sq || 0) + (o.take || 0);
+    return top ? [x + dir * V.hat * u, y + dy - 10.4 * u * (1 - sq)] : [x + dir * (V.R + .4) * u, y + dy - 8.6 * u * (1 - sq)];
+  },
+});

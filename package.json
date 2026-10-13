@@ -1,12 +1,14 @@
 {
-  "name": "claude-animation-base",
+  "name": "mv-template",
   "version": "1.0.0",
   "private": true,
   "license": "MIT",
-  "description": "Clawd, painted in p5.brush: a character kit and guide for making hand-painted Clawd animations",
+  "description": "A template for hand-painted music videos made with Claude: song analysis, a beat-locked engine, a watercolour style.",
   "scripts": {
-    "sheet": "node render.mjs --sheet=0,1,2,3,4,5 --out=out/sheet.jpg",
-    "video": "node render.mjs --clip --out=out/video.mp4"
+    "build": "node engine/build.mjs",
+    "songcheck": "node engine/render.mjs --songcheck",
+    "rough": "node engine/render.mjs --rough",
+    "final": "node engine/render.mjs --final"
   },
   "dependencies": {
     "p5": "^2.3.3",

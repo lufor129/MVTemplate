@@ -2,37 +2,32 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Clawd studio</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Permanent+Marker&display=block">
+<title>MV studio</title>
 <style>
   html, body { margin: 0; background: #1b1820; color: #eee; font: 13px system-ui, sans-serif; }
-  main { padding: 12px; display: grid; gap: 8px; }
-  #out { width: min(100%, 1280px); aspect-ratio: 16 / 9; height: auto; background: #F3EBDC; }
+  main { padding: 12px; display: grid; gap: 8px; justify-items: start; }
+  #out { max-width: min(100%, 1280px); max-height: 80vh; height: auto; background: #F3EBDC; }
   .p5Canvas { display: none !important; }
-  .bar { display: flex; gap: 10px; align-items: center; max-width: 1280px; }
+  .bar { display: flex; gap: 10px; align-items: center; width: min(100%, 1280px); }
   #scrub { flex: 1; }
   #tt { font-variant-numeric: tabular-nums; min-width: 190px; }
+  button { font: inherit; background: #2b2633; color: #eee; border: 1px solid #554d63; border-radius: 4px; padding: 2px 10px; }
 </style>
-<script src="node_modules/p5/lib/p5.min.js"></script>
-<script src="node_modules/p5.brush/dist/p5.brush.js"></script>
+<!-- Everything else (the Style Profile's libraries and fonts, the engine, the MV's characters and chapters) is written by
+     .build/mv.js. Build it with: node engine/build.mjs [--mv=examples/pdoom]. render.mjs builds it before every render. -->
+<script src=".build/mv.js"></script>
 </head>
 <body>
 <main>
   <canvas id="out" width="1920" height="1080"></canvas>
-  <div class="bar"><input id="scrub" type="range" min="0" max="11" step="0.0417" value="0"><span id="tt">loading…</span></div>
+  <div class="bar"><button id="play">▶</button><input id="scrub" type="range" min="0" max="10" step="0.0417" value="0"><span id="tt">loading…</span></div>
 </main>
-<!-- engine -->
-<script src="src/config.js"></script>
-<script src="src/core.js"></script>
-<script src="src/clawd.js"></script>
-<script src="src/timeline.js"></script>
-<!-- reference sheets (standalone loops) -->
-<script src="src/sheets.js"></script>
-<!-- your video: add a script per scene file, in order -->
-<script src="src/scenes/demo.js"></script>
 <script>
-  // Open studio.html?loop=emotions (or views) to scrub a standalone loop instead of the video.
-  const q = new URLSearchParams(location.search).get('loop'); if (q && LOOPS[q]) window.LOOP = LOOPS[q];
+  // studio.html?loop=<name> scrubs a standalone loop (a model sheet: ?loop=clawd-sheet); ?songcheck shows the Song Check;
+  // ?t=12.5 opens at a time; ?scale=0.5 renders smaller and faster.
+  const q = new URLSearchParams(location.search);
+  if (q.get('loop') && LOOPS[q.get('loop')]) window.LOOP = LOOPS[q.get('loop')];
+  if (q.has('songcheck')) window.SONGCHECK = true;
 </script>
 </body>
 </html>

@@ -1,0 +1,7 @@
+{
+  "name": "watercolor",
+  "description": "Hand-painted watercolour and boiling ink on paper, with p5.brush.",
+  "libraries": ["node_modules/p5/lib/p5.min.js", "node_modules/p5.brush/dist/p5.brush.js"],
+  "fonts": "https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Shantell+Sans:wght@800&family=LXGW+WenKai+TC:wght@700&family=Klee+One:wght@600&display=block",
+  "scripts": ["palette.js", "paint.js", "transitions.js"]
+}
