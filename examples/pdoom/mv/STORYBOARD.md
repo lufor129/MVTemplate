@@ -10,7 +10,7 @@ Cast:
 - Leads: Clawd (examples/clawd), grows over the video: tiny on a monitor → person-sized → building-sized → planet-sized → cute again at the reveal. The Researcher (mv/characters/researcher.js), the "I" of the song: charmed, then serving, chased, trapped, dropped.
 - Guests: the troupe (small Clawds in hats), the shoggoth with a smiley mask (Ch. 2), Sydney-Clawd with heart eyes (Ch. 3), the crowned basilisk (Ch. 4, back in Ch. 9 as a puppet), Gato-Clawd with cat ears (Ch. 5), the chinchilla (Ch. 7). Each goes on `CAST` for the curtain call.
 Arc: Clawd: asleep → starstruck → playful → reckless joy → smug boss → hungry → showman. Researcher: charmed → nervous → servile → terrified → swept along.
-Sound Words: the painted title on the backdrop (opening, and again on the falling curtain), CHOMP! (end of Ch. 1), FOOM (Ch. 2), the 你好 / 中文 slips in the Chinese room (the joke is the writing), the meter's P(DOOM) label and percentage, BOOM (the basilisk, Ch. 4), "the cat sat on the [MASK]" → "mat!" on the chalkboard (Ch. 8; the joke is the writing), SLAM (Ch. 8). Everything else is pictures: the fuse bomb's flash is wordless, the hairpin sign is an arrow, the killswitch is a red button, the snores are painted squiggles.
+Sound Words: the painted title on the backdrop (opening, and again on the falling curtain; no other credits), CHOMP! (end of Ch. 1), FOOM (Ch. 2), the 你好 / 中文 slips in the Chinese room (the joke is the writing), the meter's P(DOOM) label and percentage, BOOM (the basilisk, Ch. 4), "the cat sat on the [MASK]" → "mat!" on the chalkboard (Ch. 8; the joke is the writing), SLAM (Ch. 8). Everything else is pictures: the fuse bomb's flash is wordless, the hairpin sign is an arrow, the killswitch is a red button, the snores are painted squiggles.
 
 Lyric Reading:
 - I see sparks of AGI in your eyes · "sparks of AGI" (the GPT-4 paper's title) · the AI literally sparks; eyes turn to stars.
@@ -59,10 +59,10 @@ Lyric Reading:
 - To recursive self-upgrade · recursive self-improvement · Clawd builds a bigger Clawd around itself, again and again.
 - What did Ilya see? We'll never know. · the "what did Ilya see" meme about OpenAI's 2023 board crisis · a door leaking light; they peek; SLAM, chains.
 - Was it all for show? · the twist · pull back: it was a stage play all along.
-Open questions:
-1. "Without a single CDR": I couldn't find what CDR means here. I read it as "with nobody watching" (detection and response). If you know the joke, the shot may change.
-2. Clawd's size on the chorus stage: GUIDE says the lead fills ~40% of the frame in dance shots, but Chapter 2's wide shots have it at ~20% to fit the pump, meter and shoggoth. Chapters 4, 6 and 8 rhyme with Chapter 2, so: keep it small, or fix Chapter 2 and grow Clawd each chorus (Clawd outgrows the stage, which is the arc)? Recommended: grow it.
-3. The end card: PDoom's curtain carried a small line "created by Claude Opus 5.5". Keep it (one more piece of text), or only the title?
+Open questions (answered at the Storyboard Gate):
+1. "Without a single CDR": keep the reading "with nobody watching" (the sleeping guard clouds).
+2. Clawd's size on the chorus stage: chosen per Shot, by what the Shot needs to show; Chapter 2 stays as it is.
+3. The end card: the title only, no credit line.
 
 Chapter 1 · lab · Intro + Verse 1 · 0–22.685 (mv/chapters/c01_lab.js)
   A  0–2.06       [Seam in: the curtains sweep open]  painted title on the backdrop · Clawd pops up through a trapdoor and waves · confetti · slow push
