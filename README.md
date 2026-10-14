@@ -4,10 +4,11 @@ A template for making a hand-painted music video with Claude. Copy it once per M
 
 > Read GUIDE.md, then make an MV for this song: a robot learning to dance.
 
-Both the song and `lyric.txt` are required. Claude first asks a few questions (the Brief: what kind of MV, format, karaoke), then analyses the song (when each line is sung, every beat and bar, the sections), writes a storyboard, designs the characters, builds the video chapter by chapter in [p5.js](https://p5js.org) and [p5.brush](https://github.com/acamposuribe/p5.brush), and renders it with the song. It stops at five Gates for you to approve:
+Both the song and `lyric.txt` are required. Claude first asks a few questions (the Brief: what kind of MV, format, karaoke, style; a style that doesn't exist yet gets made first and shown to you as a Style Sample), then analyses the song (when each line is sung, every beat and bar, the sections), writes a storyboard, designs the characters, builds the video chapter by chapter in [p5.js](https://p5js.org) and [p5.brush](https://github.com/acamposuribe/p5.brush), and renders it with the song. It stops at five Gates for you to approve (six with a new style):
 
 | Gate | you get | you check |
 |---|---|---|
+| Style Sample | `out/check/style_sample.jpg`, only when you asked for a new style | the look |
 | Song Check | `out/check/songcheck.mp4`: the song with beat clicks, sections and karaoke | the timing is right |
 | Storyboard | `mv/STORYBOARD.md` | the idea, the shots, the open questions |
 | Model Sheets | each lead character's views and emotions (skipped when there are none) | the characters |

@@ -24,7 +24,7 @@ An MV is one copy of this template. The person puts `song.mp3` (any audio format
 
 | # | step | makes | Gate |
 |---|---|---|---|
-| 0 | The Brief | `mv/mv.json` | — (questions) |
+| 0 | The Brief, and a new Style Profile if one is asked for | `mv/mv.json`, `styles/<name>/` | 🚦 Style Sample (only with a new style) |
 | 1 | Analyse the Song | `song/song.json`, `out/check/songcheck.mp4` | 🚦 Song Check |
 | 2 | Lyric Reading, then the Storyboard | `mv/STORYBOARD.md` | 🚦 Storyboard |
 | 3 | Build the Leads (if any) | `mv/characters/*.js`, their Model Sheets | 🚦 Model Sheets (only with Leads) |
@@ -48,9 +48,17 @@ The sentence says what the MV is about; settle what it leaves open before anythi
 
 - **Format**: 16:9 or 9:16.
 - **Karaoke**: on or off (usually off in lyric mode, where the words are already in the picture).
-- **Style**: a folder in `styles/` (only `watercolor` so far; skip the question while there's one).
+- **Style**: always ask, even while `styles/` holds only one. Offer each existing Style Profile (its `style.json` `description`), the one that fits the sentence best first; the person may also describe a look that isn't there yet (cut paper, pixel art, pastel, ink line…).
 
 Also ask whether they have references (a character to reuse, photos, colours, an MV they love). Put any files in `mv/refs/` and look at them. Write the answers into `mv/mv.json` (`title`, `mode`, `format`, `karaoke`, `style`).
+
+**A new style.** If the person asked for a look no Style Profile has, make one in this MV's copy before going on, as [styles/README.md](styles/README.md) describes: `styles/<name>/` with its `style.json`, a `STYLE.md` (the rules of the medium, its drawing API, a "What to check" list) and scripts that define every global in that table, so the engine, the Characters and the Chapters draw with it unchanged. Start from a copy of `styles/watercolor/` and change what the look needs. Add a loop that shows the look off, `LOOPS['style-sample']` in a script of the profile: a background, a Character-sized shape with an outline, a glow, a Sound Word, a transition and the karaoke band, over a few seconds. Render it:
+
+```bash
+node engine/render.mjs --loop=style-sample --sheet=0.5,1.5,2.5 --cols=3 --w=1600 --out=out/check/style_sample.jpg
+```
+
+🚦 **Style Sample.** Show the person the sheet and ask whether this is the look. Revise it until they approve. If it turns out well, bring the profile back to the template afterwards so the next MV can pick it.
 
 ### 1. Analyse the Song
 

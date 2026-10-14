@@ -11,11 +11,11 @@ One music video, made from one copy of this template, driven by one Song. A vide
 _Avoid_: project, clip, film
 
 **Gate**:
-A point where making the MV stops until the person approves what is there. There are five: the Song Check, the Storyboard, the Leads' Model Sheets (skipped when the MV has no Leads), the first Chapter and the Rough Cut.
+A point where making the MV stops until the person approves what is there. There are five: the Song Check, the Storyboard, the Leads' Model Sheets (skipped when the MV has no Leads), the first Chapter and the Rough Cut, plus a Style Sample first when the MV needs a new Style Profile.
 _Avoid_: checkpoint, review step, milestone
 
 **Brief**:
-What the person settles before the Song is analysed, beyond their one sentence: the Mode, the format, Karaoke on or off, the Style Profile, and any references.
+What the person settles before the Song is analysed, beyond their one sentence: the Mode, the format, Karaoke on or off, the Style Profile (always asked; a look no profile has means making a new one), and any references.
 _Avoid_: spec, requirements, settings
 
 **Mode**:
