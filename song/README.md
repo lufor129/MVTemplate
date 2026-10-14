@@ -1,1 +1,1 @@
-Put the song here as `song.mp3` (or `song.wav`, `.flac`, `.m4a`…) and its words as `lyric.txt`: one sung line per line, with `[Verse 1]`, `[Chorus]`… marks for the Sections. Then run `uv run --project tools/song python tools/song/analyze.py song` (see GUIDE.md, step 1).
+Put the song here as `song.mp3` (or `song.wav`, `.flac`, `.m4a`…) and its words as `lyric.txt` (or `lyrics.txt`): one sung line per line, with `[Verse 1]`, `[Chorus]`… marks for the Sections. Then run `uv run --project tools/song python tools/song/analyze.py song` (see GUIDE.md, step 1).

@@ -18,7 +18,7 @@ Underneath all three, the viewer has to be able to follow it, at full speed, the
 
 ## The workflow
 
-An MV is one copy of this template. The person puts `song.mp3` (any audio format named `song.*`) and `lyric.txt` in `song/`, and gives you a sentence. You then go through these steps in order. At each 🚦 **Gate**, stop: show the person what's there, say what you need from them, and wait for their approval before going on. Changes they ask for at a Gate are made before you pass it.
+An MV is one copy of this template. The person puts `song.mp3` (any audio format named `song.*`) and `lyric.txt` (or `lyrics.txt`) in `song/`, and gives you a sentence. You then go through these steps in order. At each 🚦 **Gate**, stop: show the person what's there, say what you need from them, and wait for their approval before going on. Changes they ask for at a Gate are made before you pass it.
 
 | # | step | makes | Gate |
 |---|---|---|---|
@@ -32,7 +32,7 @@ An MV is one copy of this template. The person puts `song.mp3` (any audio format
 
 ### 1. Analyse the Song
 
-`lyric.txt` holds the words as the person wrote them, one Lyric Line per line, with `[Verse 1]`, `[Chorus]`, `[Bridge]`… marks for Sections (without marks, blank lines separate them). It is the only source of words: the analysis only finds when they are sung (ADR 0003).
+`lyric.txt` holds the words as the person wrote them, one Lyric Line per line, with `[Verse 1]`, `[Chorus]`, `[Bridge]`… marks for Sections (without marks, blank lines separate them). It is the only source of words: the analysis only finds when they are sung (ADR 0003). If it has neither marks nor blank lines, add the marks yourself from the lyrics' structure (verses, the repeated chorus, the bridge, spoken bits) before the analysis, change nothing else, and show them at the Song Check. Section names come out unique: a repeated name is numbered (`Chorus`, `Chorus 2`; `Interlude`, `Interlude 2`), so `sec('Interlude 2')` finds the second one.
 
 ```bash
 uv run --project tools/song python tools/song/analyze.py song      # first run downloads models; a few minutes
@@ -100,14 +100,19 @@ Build what several Chapters share (the palette in mv.json, recurring props, sets
 
 ### 5. The other Chapters, in parallel
 
-For a short MV, build the remaining Chapters yourself, in order. For a long one, use subagents, at most three at a time (each one renders in its own headless Chrome). Give each subagent:
+For a short MV, build the remaining Chapters yourself, in order. For a long one, use subagents, at most three at a time (each one renders in its own headless Chrome). Start a new one whenever one finishes.
 
-- this file, the Style Profile's STYLE.md, GLOSSARY.md, the Storyboard, and the first Chapter's file as the example to match;
-- its Chapter: the file name, its start and end, its Shots, the Seams into and out of it (and what the neighbouring Chapters show at those Seams);
-- the rules: **edit only your own Chapter file.** If a shared helper is missing, write it privately inside your IIFE. If a shared file has a bug, report it; don't edit it. Guests your Chapter introduces live in your file; one that a later Chapter brings back goes on `CAST` (`CAST.name = (x, y, u, pose) => …`).
-- the review loop below, and its budget.
+Before the first one starts, move anything two Chapters will both draw (a troupe of background dancers, a set the choruses return to) into `mv/characters/`. Each subagent gets the common brief, [docs/chapter-brief.md](docs/chapter-brief.md) (what to read, the API, the rules, the review budget, what to report), plus its own:
 
-When they're done, check every Seam between Chapters yourself (a strip across each one), and fix what doesn't join.
+- **its Chapter:** the file name, `chapter('<name>', start, end, …)` with the Section names, the Shots it takes from the Storyboard, its Sound Words, its Guests;
+- **a contract for each Seam it shares.** Neighbours are built at the same time and can't look at each other, so write down the exact frame where they meet, the same text in both briefs. Examples that worked:
+  - a wipe split in half: the earlier Chapter ends with `brushWipe((lt - (dur - .3)) / .6, cols)` (covering the frame exactly at its end), the later one starts with `brushWipe(.5 + lt / .6, cols)`, the same `cols`;
+  - a full-frame colour: "at the edge the whole frame is `flash(1, '#F4B6C2')` with a white highlight arc upper left"; the later Chapter starts on it and breaks it;
+  - a camera state: "rolled +0.35 rad and solid red at the edge"; "zoom z = 1 − .06·k², ending at .94";
+  - a held tableau: the earlier Chapter writes the exact positions, scales and camera formula in a comment block `SEAM OUT TO CHAPTER n` at the top of its file, and the later one, started after it, copies them.
+- **Guests:** a Guest a later Chapter brings back (a curtain call, a callback) goes on `CAST` as `CAST.<name> = (x, y, s, t, o) => …`, standing on (x, y), with `s` on the Lead's size scale. Its subagent reports the signature and options. A Chapter that uses several Guests starts after the Chapters that define them.
+
+When they're done, check every Seam between Chapters yourself: one sheet with frames at −0.4, −0.15, −0.04, +0.04, +0.15, +0.4 s around each Chapter edge shows them all at once. Fix what doesn't join.
 
 ### 6. The Rough Cut
 
@@ -243,7 +248,6 @@ Open each image with the Read tool and actually look at it. Check:
 | `engine/build.mjs`, `engine/render.mjs` | gather the MV into `.build/mv.js`; render sheets, clips, the Gates' videos |
 | `styles/<name>/` | the Style Profile: STYLE.md, its primitives, transitions, karaoke look |
 | `examples/clawd/` | Clawd, an example Character |
-| `examples/pdoom/` | an example MV: the P(doom) song analysed, the Researcher, and its first Chapters |
 | `tools/song/` | the song analysis |
 | `studio.html` | open it in Chrome to scrub or play along (`node engine/build.mjs` first; `?t=`, `?loop=`, `?songcheck`) |
 
@@ -282,6 +286,8 @@ Open each image with the Read tool and actually look at it. Check:
 | `barOf(t)`, `barN(t)`, `barAt(n)` | the same for bars |
 | `pulse(t, k)`, `pulse2(t, k)` | 1 on each beat (or eighth), then decaying: hits, bounces, flashes |
 | `nearestBeat(t)`, `nearestBar(t)` | snap a time to the grid |
+| `wordAt(i, k)` | when word k of Lyric Line i starts (CJK: character k): anchor events to words |
+| `beatsAfter(t, n)` | n beats after the beat nearest t |
 | `BEAT`, `BAR` | typical beat and bar length in seconds, for sizing motions |
 | `lineAt(t)`, `sectionAt(t)` | the Lyric Line or Section at t: `{ i, line/section, k }` (k = 0..1 through it) |
 | `LINES`, `SECTIONS`, `DUR`, `SONG` | the raw data |
@@ -315,7 +321,7 @@ clawd.dancer(x, y, 24, 'bounce', t, { eyes: 'happy', mouth: 'grin', seed: 2 }); 
 - Keep every Character on model in every Shot: the same shape and features throughout.
 - Characters that come and go mid-Shot need a stable `boilKey`.
 
-Clawd (examples/clawd/clawd.js) is a full example: 5 views, 31 emotions, hats, a lunchbox mouth, arm hooks for held props. The Researcher (examples/pdoom/mv/characters/researcher.js) is a second, with 2 views.
+Clawd (examples/clawd/clawd.js) is a full example: 5 views, 31 emotions, hats, a lunchbox mouth, arm hooks for held props.
 
 ## Common failures
 

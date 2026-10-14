@@ -16,7 +16,7 @@ Claude analyses the song (when each line is sung, every beat and bar, the sectio
 
 Then it renders `out/final/<title>.mp4`.
 
-It grew out of [ClaudeAnimationBase](https://github.com/JohnHeibel/ClaudeAnimationBase) (the character kit, the watercolour medium and the animation guide) and the music video [I'm Upping My P(doom)](https://github.com/JohnHeibel/PDoomVideo), which is the worked example in `examples/pdoom/`.
+It grew out of [ClaudeAnimationBase](https://github.com/JohnHeibel/ClaudeAnimationBase) (the character kit, the watercolour medium and the animation guide) and the music video [I'm Upping My P(doom)](https://github.com/JohnHeibel/PDoomVideo), which was this template's first test.
 
 ## You need
 
@@ -38,7 +38,7 @@ node engine/render.mjs --rough                                  # the Rough Cut
 node engine/render.mjs --final                                  # the MV
 ```
 
-Every render command takes `--mv=<folder>` for an MV kept elsewhere, e.g. `--mv=examples/pdoom`.
+Every render command takes `--mv=<folder>` for an MV kept elsewhere.
 
 ## What's here
 
@@ -53,5 +53,4 @@ Every render command takes `--mv=<folder>` for an MV kept elsewhere, e.g. `--mv=
 | [styles/](styles/) | Style Profiles: how paint lands on the frame. [watercolor/](styles/watercolor/STYLE.md) |
 | [tools/song/](tools/song/) | The song analysis |
 | [examples/clawd/](examples/clawd/) | Clawd, an example character with 31 emotions |
-| [examples/pdoom/](examples/pdoom/) | The P(doom) song analysed, its Researcher, and its first chapters |
 | `studio.html` | Scrub or play an MV in Chrome |

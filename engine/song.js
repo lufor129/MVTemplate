@@ -8,6 +8,8 @@
 //   barOf(t), barN(t), barAt(n)                the same for bars (the downbeats).
 //   pulse(t, k), pulse2(t, k)                  1 exactly on each beat (or eighth), decaying after: hits and bounces.
 //   BEAT, BAR                                  the typical beat and bar length in seconds, for sizing motions.
+//   wordAt(i, k)                               when word k of Lyric Line i starts (CJK: character k).
+//   beatsAfter(t, n)                           n beats after the beat nearest t.
 //   lineAt(t)  the Lyric Line being sung at t: { i, line, k } (k = 0..1 through it), or null.
 //   sectionAt(t)                               the Section at t: { i, section, k }.
 const DUR = SONG.duration;
@@ -47,6 +49,8 @@ const pulse = (t, k = 6) => Math.exp(-frac(bpOf(t)) * k);          // 1 exactly 
 const pulse2 = (t, k = 6) => Math.exp(-frac(bpOf(t) * 2) * k);     // same on eighth notes
 const nearestBeat = t => beatAt(Math.round(bpOf(t)));
 const nearestBar = t => barAt(Math.round(barOf(t)));
+const wordAt = (i, k) => LINES[i].tokens[k][0];
+const beatsAfter = (t, n) => beatAt(Math.round(bpOf(t)) + n);
 
 function lineAt(t) {
   for (let i = 0; i < LINES.length; i++) {

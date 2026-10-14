@@ -1,5 +1,5 @@
 // render.mjs: renders studio.html in headless Chrome. Builds .build/mv.js first. Every command takes --mv=<dir> (the
-// MV folder: the template root by default, or e.g. examples/pdoom); outputs go to <dir>/out/.
+// MV folder: the template root by default, or any folder laid out like it); outputs go to <dir>/out/.
 //
 //   The Gates:
 //     node engine/render.mjs --songcheck                         the Song Check video (song + beat clicks) → out/check/songcheck.mp4

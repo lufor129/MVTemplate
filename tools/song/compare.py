@@ -1,6 +1,6 @@
 """compare.py: measure song.json's lyric timing against a hand-timed reference (the acceptance test for analyze.py).
 
-  uv run --project tools/song python tools/song/compare.py examples/pdoom/song/song.json examples/pdoom/song/reference.json
+  uv run --project tools/song python tools/song/compare.py song/song.json song/reference.json
 
 The reference is {"lines": [{"start", "end", "text"}, ...]} in the same order as lyric.txt. Passes when no line is
 missing and the median start error is at most --tol seconds (default 0.2). End errors are reported too, but a

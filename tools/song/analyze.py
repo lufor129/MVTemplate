@@ -1,6 +1,6 @@
 """analyze.py: turn a song folder (song.mp3 + lyric.txt) into song.json, the timing every other step uses.
 
-  uv run --project tools/song python tools/song/analyze.py song            # or examples/pdoom/song
+  uv run --project tools/song python tools/song/analyze.py song
   options: --lang=zh|en|ja (Whisper's language; guessed from lyric.txt), --redo=vocals,asr,refine,beats (ignore those caches)
 
 Steps (each cached in <song>/.analysis/, so a re-run only redoes what changed):
@@ -332,6 +332,14 @@ def make_sections(names, lines, grid, dur):
     if dur - t >= bar * .95 and out[-1]['kind'] != 'outro':   # a sung outro just runs on to the end
         out.append({'name': 'Outro', 'kind': 'outro', 'start': t})
     for a, b in zip(out, out[1:] + [{'start': dur}]): a['end'] = round(b['start'], 3); a['start'] = round(a['start'], 3)
+    # every name is unique, so sec(name) finds one Section: a repeated name gets a number ("Interlude 2", "Chorus 3")
+    count = {}
+    for s in out: count[s['name']] = count.get(s['name'], 0) + 1
+    seen = {}
+    for s in out:
+        if count[s['name']] > 1:
+            seen[s['name']] = seen.get(s['name'], 0) + 1
+            if seen[s['name']] > 1: s['name'] = f"{s['name']} {seen[s['name']]}"
     return out, [s['index'] for s in sung]
 
 
@@ -359,8 +367,8 @@ def main():
     d = Path(a.dir); cache = d / '.analysis'; cache.mkdir(exist_ok=True)
     audio = next((p for p in sorted(d.iterdir()) if p.stem == 'song' and p.suffix.lower() in ('.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac')), None)
     if not audio: sys.exit(f'no song.* audio file in {d}')
-    lyr = d / 'lyric.txt'
-    if not lyr.exists(): sys.exit(f'no lyric.txt in {d}')
+    lyr = next((d / n for n in ('lyric.txt', 'lyrics.txt') if (d / n).exists()), None)
+    if not lyr: sys.exit(f'no lyric.txt in {d}')
     for r in filter(None, a.redo.split(',')):
         for f in {'vocals': ['vocals.flac', 'asr.json', 'refined.json'], 'asr': ['asr.json', 'refined.json'], 'refine': ['refined.json'], 'beats': ['beats.json']}[r]: (cache / f).unlink(missing_ok=True)
 

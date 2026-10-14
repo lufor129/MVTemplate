@@ -1,7 +1,7 @@
 // build.mjs: gather one MV into .build/mv.js, the single script studio.html loads. render.mjs runs it before every
 // render, so you only run it by hand to scrub the studio after changing files:  node engine/build.mjs [--mv=<dir>]
 //
-// An MV folder (the template root by default, or e.g. examples/pdoom) holds:
+// An MV folder (the template root by default, or any folder laid out like it) holds:
 //   song/song.json        the analysed Song (tools/song/analyze.py). Without it, mv.json's bpm and duration make a
 //                         silent MV with an even Beat Grid.
 //   mv/mv.json            the MV's settings (see DEFAULTS)
