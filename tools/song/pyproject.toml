@@ -17,6 +17,8 @@ dependencies = [
 ]
 
 [tool.uv]
+# uv's own Python: a conda Python ships its own OpenMP, and Whisper then segfaults next to torch's
+python-preference = "only-managed"
 package = false
 # Apple Silicon and Linux only: demucs pins an old torch on Intel Macs.
 environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'", "sys_platform == 'linux'"]
