@@ -324,6 +324,7 @@ def make_sections(names, lines, grid, dur):
         if start - t >= bar * .95:                     # an unsung stretch of a bar or more is its own section
             out.append({'name': 'Intro' if not out else 'Interlude', 'kind': 'intro' if not out else 'interlude', 'start': t})
         elif out: start = t                            # a short gap belongs to the section before it
+        else: start = 0.                               # (or, before the first section, to it)
         s['index'] = len(out)
         out.append({'name': s['name'], 'kind': s['kind'], 'start': start})
         nxt = sung[i + 1]['first'] if i + 1 < len(sung) else dur
