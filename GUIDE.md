@@ -98,7 +98,7 @@ Structure:
 - Repeated Sections (choruses) should rhyme: the same setting or motif, escalating each time.
 - Times come from `song.json`: Shot starts on line starts or beats, big changes on bar starts.
 
-Check it against the rules: an event in every Shot? Every read has time to land? A transition at every Seam? Any text beyond the listed Sound Words? Does the ending rhyme with the opening?
+Check it against the rules: an event in every Shot? Every read has time to land? A transition at every Seam? Any lettering beyond what it lists (Sound Words, and painted lines in lyric mode)? Does the ending rhyme with the opening?
 
 🚦 **Storyboard.** Show the person the Storyboard (and the Open questions). Revise it until they approve.
 
@@ -164,7 +164,7 @@ node engine/render.mjs --final --workers=3     # full size, mv.json fps, with th
 
 Draw only with the Style Profile's primitives (watercolour: `paint()`, `inkLine()`, `glow()`…) and keep every rule its STYLE.md sets, above all what the look forbids. Whatever the style, Characters turn through drawn key views (the Character Contract), never a 3D projection.
 
-### 2. No text, except a few Sound Words
+### 2. No text, except a few Sound Words (and the lyrics, in lyric mode)
 
 - **Show it, don't write it.** No captions, no titles, no labels on objects, no signs, no speech bubbles with words, no words on screens. The karaoke (when it's on) already carries the lyrics, under the picture.
 - **A sign that repeats the lyric is the classic failure.** If the line is "I'm lost" and a Character holds a sign saying "I'm lost", the Shot has failed. Act it: look left, then right, the map upside down, a sweat drop.
@@ -194,7 +194,7 @@ You know what happens because you wrote the code. The viewer doesn't: they see i
 
 - **Nothing is ever still.** Every emotion has its own idle motion, cameras drift or push, backgrounds stir, and the Style Profile's texture moves (watercolour: the linework boils). A frozen frame reads as a bug.
 - **Faces act, they never snap.** Change moods with `ch.emotions()`, which does anticipation, a squint, a take and overshoot around every change.
-- **Characters are big.** In a medium shot a Character stands at least a fifth of the frame's shorter side tall; in chorus and dance Shots the Lead fills about 40% of it. Tiny Characters are for wide establishing Shots only.
+- **Characters are big.** In a medium shot a Character stands about 15–20% of the frame's shorter side tall; in chorus and dance Shots the Lead fills about 40% of it. Tiny Characters are for wide establishing Shots only.
 - **Everything moves on the beat.** Idles, bounces and dances all read the Beat Grid, so the whole film shares the song's pulse, drift and all.
 
 ### 6. Every Seam has a transition
@@ -251,7 +251,7 @@ Open each image with the Read tool and actually look at it. Check:
 - **Contacts:** feet on the ground, held things touching the hand, thrown things leaving from it.
 - **Seams:** the first and last 0.5 s of every Shot. Does each open and close with its transition?
 - **Rules:** any lettering the Storyboard doesn't list? Any dead stretch?
-- **Style:** the checks the Style Profile's STYLE.md lists (watercolour: plain p5 shapes, pure black or white, glows mixed like pigment, outlines blobbing under zoom).
+- **Style:** the "What to check" list in the Style Profile's STYLE.md.
 
 **Budget:** at least one sheet per Shot, a strip for every key motion and Seam, and a crop for every face that carries the story. Sheets cost about 0.1–2.5 s per frame: don't skip them.
 
@@ -324,7 +324,7 @@ Open each image with the Read tool and actually look at it. Check:
 - **Easing:** `ease`, `easeIn`, `easeOut`, `backOut` (overshoot), `elasticOut`.
 - **Acting:** `jump(t, t0, t1, h)` → `{dy, sq}`; `take(t, t0, amt)` → `{sq, dy}`; `spring(t, t0, k, w)`; `ring(t, [t0, …])`; `arcPt(p0, p1, h, k)`; `onTwos(t)` (hold each drawing two frames).
 - **Camera:** `camBegin(cx, cy, zoom, rot)` … `camEnd()` (world point to screen centre; one level; always pair them); `toScreen(x, y)`; `shakeXY(t, amount)`.
-- **Lettering** (Sound Words only): `letter(txt, x, y, size, colour, {pop, rot, alpha, screen})`, `sfx(txt, x, y, size, colour, age)`. Composited at `flushLetters()`, after the Shot; call it yourself before a wipe that must cover them.
+- **Lettering** (Sound Words, and painted lines in lyric mode): `letter(txt, x, y, size, colour, {pop, rot, alpha, screen})`, `sfx(txt, x, y, size, colour, age)`. Composited at `flushLetters()`, after the Shot; call it yourself before a wipe that must cover them.
 - **Loops:** `LOOPS.name = t => {...}; LOOPS.name.len = 4;` makes a standalone loop (tests, GIFs, sheets), rendered with `--loop=name`.
 
 ### Characters

@@ -5,7 +5,7 @@ A Style Profile is one complete way of putting paint on the frame: its drawing p
 A profile is a folder `styles/<name>/` with:
 
 - **`style.json`**: `libraries` (scripts loaded before everything, e.g. p5), `fonts` (a stylesheet URL), `scripts` (the profile's own files, loaded after the engine).
-- **`STYLE.md`**: the rules of the medium and its drawing API, written for the model, with a "What to check" list of what the look forbids. GUIDE.md sends the model here for the rules and from its review loop for the checks; GUIDE.md itself holds nothing that depends on the look.
+- **`STYLE.md`**: the rules of the medium and its drawing API, written for the model, with a "What to check" list of what the look forbids. GUIDE.md sends the model here for the rules and from its review loop for the checks. GUIDE.md keeps no rules of its own about the look; where it needs an example, it uses watercolour.
 - **Scripts** that define these globals, which the engine, the Characters and the Chapters all draw with:
 
 | global | what it is |
