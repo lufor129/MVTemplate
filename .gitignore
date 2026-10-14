@@ -4,3 +4,4 @@ out/
 .venv/
 **/song/.analysis/
 .DS_Store
+__pycache__/
