@@ -4,13 +4,15 @@ Read this whole file before you do anything, then the Style Profile's `STYLE.md`
 
 The person decides **what** the MV is about, and may say no more than one sentence. This guide decides **how** it's made. If they ask for something the rules below forbid, do what they ask.
 
-**No design here is final.** Clawd, the Researcher, the emotions, the props and the helpers are examples, not limits. Each MV designs its own Characters and props, with the same tools and rules, so everything belongs together.
+**Talk with the person through the AskUserQuestion tool.** Whenever they have to decide something (the Brief, the Open questions, each Gate's approval, a choice between fixes), put it to them as a question with 2–4 options, the one you recommend first and marked "(Recommended)". Show what they're judging (the video, the Storyboard, the sheet) before the question. Talk in the person's language.
+
+**No design here is final.** Clawd, its emotions, the props and the helpers are examples, not limits. Each MV designs its own Characters and props, with the same tools and rules, so everything belongs together.
 
 ---
 
 ## The three goals
 
-- **Handmade.** It should look made by hand, frame by frame, in the Style Profile's medium, with no lettering beyond a few Sound Words.
+- **Handmade.** It should look made by hand, frame by frame, in the Style Profile's medium (watercolour by default), keeping every rule its STYLE.md sets, with no lettering beyond what the Storyboard lists.
 - **Alive.** Something is always moving and something is always happening. Faces act instead of snapping, and Characters are big enough to feel.
 - **One piece.** It's one film cut to one song, not a pile of clips. Plan it before you draw it, and link every Shot to the next.
 
@@ -18,17 +20,37 @@ Underneath all three, the viewer has to be able to follow it, at full speed, the
 
 ## The workflow
 
-An MV is one copy of this template. The person puts `song.mp3` (any audio format named `song.*`) and `lyric.txt` (or `lyrics.txt`) in `song/`, and gives you a sentence. You then go through these steps in order. At each 🚦 **Gate**, stop: show the person what's there, say what you need from them, and wait for their approval before going on. Changes they ask for at a Gate are made before you pass it.
+An MV is one copy of this template. The person puts `song.mp3` (any audio format named `song.*`) and `lyric.txt` (or `lyrics.txt`) in `song/`, and gives you a sentence. Both files are required: the template makes MVs for sung songs, and the Lyric Sheet drives the timing, the Sections and the Shots. If either is missing, ask for it before anything else. You then go through these steps in order. At each 🚦 **Gate**, stop: show the person what's there, say what you need from them, and wait for their approval before going on. Changes they ask for at a Gate are made before you pass it.
 
 | # | step | makes | Gate |
 |---|---|---|---|
+| 0 | The Brief | `mv/mv.json` | — (questions) |
 | 1 | Analyse the Song | `song/song.json`, `out/check/songcheck.mp4` | 🚦 Song Check |
 | 2 | Lyric Reading, then the Storyboard | `mv/STORYBOARD.md` | 🚦 Storyboard |
-| 3 | Build the Leads | `mv/characters/*.js`, their Model Sheets | 🚦 Model Sheets |
+| 3 | Build the Leads (if any) | `mv/characters/*.js`, their Model Sheets | 🚦 Model Sheets (only with Leads) |
 | 4 | Shared pieces and the first Chapter | `mv/chapters/c01_*.js` | 🚦 First Chapter |
 | 5 | The other Chapters, in parallel | `mv/chapters/*.js` | — |
 | 6 | The Rough Cut | `out/rough/rough.mp4` | 🚦 Rough Cut |
 | 7 | The final render | `out/final/<title>.mp4` | — |
+
+### 0. The Brief
+
+The sentence says what the MV is about; settle what it leaves open before anything else, in one AskUserQuestion call (skip what the person already said):
+
+- **Mode**: what kind of MV it is. It decides what counts as an event (rule 3) and how the Logline reads. A mode is a lean, not a cage: a narrative MV can have a performance chorus.
+
+  | mode | what carries it | an event is |
+  |---|---|---|
+  | narrative | Characters with a want, through a story | a Character wants, tries, fails, finds, reacts |
+  | performance | someone performing the song: a singer, a band, dancers | the performance builds: a new player, a move, a lift the camera finds |
+  | mood | a place, light, weather or abstract forms, maybe no Characters at all | the world transforms: light, colour, form, season, scale |
+  | lyric | the sung words, painted into the picture | words arrive, act out what they say, and leave |
+
+- **Format**: 16:9 or 9:16.
+- **Karaoke**: on or off (usually off in lyric mode, where the words are already in the picture).
+- **Style**: a folder in `styles/` (only `watercolor` so far; skip the question while there's one).
+
+Also ask whether they have references (a character to reuse, photos, colours, an MV they love). Put any files in `mv/refs/` and look at them. Write the answers into `mv/mv.json` (`title`, `mode`, `format`, `karaoke`, `style`).
 
 ### 1. Analyse the Song
 
@@ -50,13 +72,13 @@ First, the **Lyric Reading**: for each Lyric Line, what it means and what pictur
 Then write `mv/STORYBOARD.md` before any scene code:
 
 ```
-Logline: one sentence. <who> wants ___, but ___, so ___.
-Format: 16:9 or 9:16 · Karaoke: on/off · Style: watercolor
+Logline: one sentence. Narrative: <who> wants ___, but ___, so ___. Other modes: what changes from the first frame to the last.
+Mode: ___ · Format: ___ · Karaoke: on/off · Style: ___ (from the Brief)
 World: the settings, a small palette, light, and how the colour changes across the MV (the colour arc).
 Motif: the thing that recurs and pays off.
-Cast: Leads (designed first, approved on Model Sheets) and Guests (designed by the Chapter that introduces them).
-Arc: the Leads' emotion keys across the whole song.
-Sound Words: the handful of painted words in the whole MV, and where (or "none").
+Cast: Leads (designed first, approved on Model Sheets) and Guests (designed by the Chapter that introduces them), or "none".
+Arc: the Leads' emotion keys across the whole song (no Leads: the world's arc).
+Sound Words: the handful of painted words in the whole MV, and where (or "none"). Lyric mode: also which lines are painted in, and how they arrive and leave.
 Lyric Reading: one line per Lyric Line: what it means · picture ideas.
 Open questions: what you need the person to decide.
 
@@ -82,13 +104,15 @@ Check it against the rules: an event in every Shot? Every read has time to land?
 
 ### 3. Build the Leads
 
+Skip this step and its Gate when the Storyboard has no Leads.
+
 Write each Lead as `mv/characters/<name>.js`, drawn to the Character Contract (see Characters, below). To use an example Character as-is, list it in `mv/mv.json` instead: `"characters": ["examples/clawd/clawd.js"]`; to change it, copy it into `mv/characters/`. Every Character gets a Model Sheet loop automatically:
 
 ```bash
 node engine/render.mjs --loop=<name>-sheet --sheet=0.3,1.05,2.6 --cols=1 --w=1600 --out=out/check/<name>_sheet.jpg
 ```
 
-Look at the sheet yourself first: every view on model, every emotion readable at a glance and different from the others, the turn steps through the views, the emotion changes act (squint, take, settle).
+Look at the sheet yourself first: every view on model, every emotion readable at a glance and different from the others (by face, or by body and colour for a Character without one), the turn steps through the views, the emotion changes act (squint, take, settle).
 
 🚦 **Model Sheets.** Show the person each Lead's sheet. Guests don't need this Gate: the Chapter that introduces a Guest designs it.
 
@@ -138,20 +162,21 @@ node engine/render.mjs --final --workers=3     # full size, mv.json fps, with th
 
 ### 1. The medium is solid
 
-Draw only with the Style Profile's primitives (`paint()`, `inkLine()`, `glow()`…) and follow its STYLE.md. Everything is flat 2D: Characters turn through drawn key views, and depth comes from overlap, scale and colour, never from a 3D projection.
+Draw only with the Style Profile's primitives (watercolour: `paint()`, `inkLine()`, `glow()`…) and keep every rule its STYLE.md sets, above all what the look forbids. Whatever the style, Characters turn through drawn key views (the Character Contract), never a 3D projection.
 
 ### 2. No text, except a few Sound Words
 
 - **Show it, don't write it.** No captions, no titles, no labels on objects, no signs, no speech bubbles with words, no words on screens. The karaoke (when it's on) already carries the lyrics, under the picture.
 - **A sign that repeats the lyric is the classic failure.** If the line is "I'm lost" and a Character holds a sign saying "I'm lost", the Shot has failed. Act it: look left, then right, the map upside down, a sweat drop.
 - **Reactions are painted marks, never letters**: `!`, `?`, zzz, sweat, hearts, a bulb, a rain cloud (emotes).
-- **Sound Words** are the only lettering inside the picture: a painted FOOM, CHOMP or SLAM, or a single word the joke needs (`sfx()`, `letter()`). A handful in the whole MV, each listed in the Storyboard.
+- **Sound Words** are the only lettering inside the picture: a painted FOOM, CHOMP or SLAM, or a single word the moment needs (`sfx()`, `letter()`). A handful in the whole MV, each listed in the Storyboard.
+- **Lyric mode** is the one exception: the sung words are the picture. The Storyboard lists which lines are painted in (`letter()`), and they act out what they say instead of sitting there as captions. Everything else in this rule still holds.
 
 ### 3. Something happens in every Shot
 
-- **Every Shot needs an event:** something changes between its first frame and its last. A Character wants something, finds something, tries, fails, reacts or gets it. "Clawd stands in a meadow being cute" is not a Shot.
+- **Every Shot needs an event:** something changes between its first frame and its last. What changes depends on the mode (step 0): a Character wants something, finds something, tries, fails, reacts or gets it (narrative); the performance builds (performance); the light, colour, weather or form transforms (mood); the words arrive, act and leave (lyric). "Clawd stands in a meadow being cute" is not a Shot, and neither is a pretty landscape that only drifts.
 - **One focal action at a time**, staged with a clear silhouette and nothing competing for attention.
-- **Cause, then reaction.** The reaction is often the funniest part, so give it time.
+- **Cause, then reaction.** The reaction is often what the viewer remembers, so give it time.
 - **Pay it off.** Whatever you set up gets resolved on screen, in that Shot or a later one.
 - **Act the line, don't illustrate the word.** A Shot shows what the Lyric Line means (from the Lyric Reading), as an event.
 
@@ -167,9 +192,9 @@ You know what happens because you wrote the code. The viewer doesn't: they see i
 
 ### 5. Alive
 
-- **Nothing is ever still.** Every emotion has its own idle motion, cameras drift or push, backgrounds stir, and the linework boils. A frozen frame reads as a bug.
+- **Nothing is ever still.** Every emotion has its own idle motion, cameras drift or push, backgrounds stir, and the Style Profile's texture moves (watercolour: the linework boils). A frozen frame reads as a bug.
 - **Faces act, they never snap.** Change moods with `ch.emotions()`, which does anticipation, a squint, a take and overshoot around every change.
-- **Characters are big.** In a medium shot a Character fills a good share of the frame height (Clawd: u ≈ 20–28; in chorus and dance Shots the lead fills about 40% of the frame). Tiny Characters are for wide establishing Shots only.
+- **Characters are big.** In a medium shot a Character stands at least a fifth of the frame's shorter side tall; in chorus and dance Shots the Lead fills about 40% of it. Tiny Characters are for wide establishing Shots only.
 - **Everything moves on the beat.** Idles, bounces and dances all read the Beat Grid, so the whole film shares the song's pulse, drift and all.
 
 ### 6. Every Seam has a transition
@@ -220,12 +245,13 @@ node engine/render.mjs --clip=23:38.5 --out=out/check/chorus.mp4                
 Open each image with the Read tool and actually look at it. Check:
 
 - **Read:** is each Shot's event clear from its sheet alone? Are the Characters big enough, and do they separate from the background? Is anything important under the karaoke band (above `KARAOKE_TOP` only)?
-- **Timing:** render a Shot at a fixed step (every 0.1–0.15 s) and read it like a viewer: where are they looking, do they understand it yet? Count the frames each read gets (24 = 1 s). Does each line's picture start with the line?
+- **Timing:** render a Shot at a fixed step (every 0.1–0.15 s) and read it like a viewer: where are they looking, do they understand it yet? Count the frames each read gets (at mv.json's `fps`: 24 frames = 1 s by default). Does each line's picture start with the line?
 - **Motion:** in strips, does every move have anticipation and follow-through? Any pops or snaps? Parts moving at different times? Anything at constant speed, or mirrored left and right?
 - **Boil:** in a strip, still things change only on boil frames. Anything still that changes every frame needs its own `boilSeed()`.
 - **Contacts:** feet on the ground, held things touching the hand, thrown things leaving from it.
 - **Seams:** the first and last 0.5 s of every Shot. Does each open and close with its transition?
-- **Rules:** any text beyond the Sound Words? Any 3D? Any dead stretch?
+- **Rules:** any lettering the Storyboard doesn't list? Any dead stretch?
+- **Style:** the checks the Style Profile's STYLE.md lists (watercolour: plain p5 shapes, pure black or white, glows mixed like pigment, outlines blobbing under zoom).
 
 **Budget:** at least one sheet per Shot, a strip for every key motion and Seam, and a crop for every face that carries the story. Sheets cost about 0.1–2.5 s per frame: don't skip them.
 
@@ -318,6 +344,7 @@ clawd.dancer(x, y, 24, 'bounce', t, { eyes: 'happy', mouth: 'grin', seed: 2 }); 
 - Every Character takes the standard pose fields (`dx`, `dy`, `sq`, `rot`, `flip`, `view`, `smear`, `walk`, `aL`/`aR`, `lookX`/`lookY`, `squint`, `emote`…), plus fields of its own, documented at the top of its file.
 - Emotes: `emote` + `emoteK` in a pose pops one by the head; `emote(kind, x, y, s, k, age)` draws one anywhere. Kinds: `!` `?` `!!` `!?` zzz sweat spark heart hearts anger steam bulb dots scribble music swirl stars cloud.
 - Dances (`ch.dance(style, t, seed)`): bounce, hop, roof, sway, spin, wave, walk, run, idle, stomp, shimmy, mix.
+- A Character doesn't need a face. An electron, a spark or a lamp leaves out eyes and mouth; its emotions are body motion, colour and emotes, and `ch.emotions()` still acts every change.
 - Keep every Character on model in every Shot: the same shape and features throughout.
 - Characters that come and go mid-Shot need a stable `boilKey`.
 
@@ -329,7 +356,7 @@ These make an MV look generated. Check your Storyboard and sheets against them:
 
 - signs, captions, labels or speech bubbles with words; a sign that repeats the lyric
 - a picture that illustrates a word of the line instead of acting what it means
-- a Character standing still and smiling while nothing happens
+- a Character standing still and smiling while nothing happens, or a landscape that only drifts
 - everything moving at one brisk speed, with events stacked on top of each other and no holds
 - moments that are over before the viewer understands them; a Shot whose picture starts late or early against its line
 - a tiny Character in a big empty landscape for the whole MV
@@ -338,7 +365,7 @@ These make an MV look generated. Check your Storyboard and sheets against them:
 - timid poses and takes that barely read
 - jittery linework (`boilSeed`)
 - hard cuts everywhere, or an MV that just starts and stops
-- 3D rotation, perspective boxes or projected turns
+- anything the Style Profile's STYLE.md forbids (watercolour: 3D rotation or perspective, plain p5 shapes, pure black or white)
 - props floating near a hand instead of touching it
 - every Chapter a different world with nothing linking them; choruses that don't rhyme
 - action or faces hidden under the karaoke band

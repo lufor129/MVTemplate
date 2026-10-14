@@ -7,7 +7,8 @@
 //              ['front', 'q', 'side', 'qback', 'back']. Turns step through them, mirrored (flip) for the other side.
 //   emotions   { name: { take, fade, body(t), ...face fields } }. Must include 'neutral'. take = how big the reaction
 //              is on switching INTO it; fade = its emote is a one-off that fades; body(t) = its idle motion as pose
-//              fields, locked to the beat (pulse(), bpOf()); the other fields (eyes, mouth, emote…) are its face.
+//              fields, locked to the beat (pulse(), bpOf()); the other fields (eyes, mouth, emote…) are its face,
+//              whatever draw() reads; a Character without a face leaves them out and acts with body and colour.
 //   rest       { field: value }: pose fields that settle with overshoot when the emotion changes (dy, sq, arms…)
 //   fades      [field, ...]: 0..1 appearance fields that cross-fade smoothly when the emotion changes (blush…)
 //   mix(prev, cur, k)        optional: any other fields to blend across a change (colours); returns them

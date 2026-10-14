@@ -10,7 +10,7 @@ You are building one Chapter of a music video, in parallel mode. Other subagents
 1. GUIDE.md (the whole file: workflow, rules, animation principles, review loop, engine API)
 2. The Style Profile's STYLE.md (`styles/<style>/STYLE.md`, the style in `<mv>/mv/mv.json`)
 3. GLOSSARY.md
-4. `<mv>/mv/STORYBOARD.md`: the whole thing (Logline, Motif, Cast, Sound Words, Lyric Reading, the answered questions), then your Chapter's Shots and its neighbours'.
+4. `<mv>/mv/STORYBOARD.md`: the whole thing (Logline, Mode, Motif, Cast, Sound Words, Lyric Reading, the answered questions), then your Chapter's Shots and its neighbours'.
 5. The Chapters already built in `<mv>/mv/chapters/`, first of all the first Chapter: the example to match in look, Character scale, background density, camera energy, boilSeed discipline, and how timing hangs off Lyric Lines, words and the Beat Grid.
 6. The shared files you'll use (read, never edit): everything in `<mv>/mv/characters/`, the Characters listed in `<mv>/mv/mv.json`, engine/acting.js, engine/song.js, engine/timeline.js, and the Style Profile's scripts (its transitions above all).
 
@@ -21,7 +21,8 @@ You are building one Chapter of a music video, in parallel mode. Other subagents
 ## Rules
 - Edit ONLY your own Chapter file. If a shared helper is missing, write it privately inside your IIFE. If a shared file (engine, style, Characters, props, other Chapters, render.mjs…) has a bug, don't edit it: report it.
 - Frames are pure functions of t: no state between frames, no `Math.random()`.
-- Text: only the Sound Words the Storyboard lists for your Chapter. Everything else is pictures.
+- Text: only the Sound Words (and, in lyric Mode, the painted lines) the Storyboard lists for your Chapter. Everything else is pictures.
+- Keep every rule in the Style Profile's STYLE.md, and run its "What to check" list on your sheets.
 - Call `boilSeed('<unique key>')` before each separate background element, prop or effect; give Characters that come and go a stable `boilKey`.
 - Keep faces and key action above `KARAOKE_TOP` while a line is showing.
 - Don't name a local variable after a p5 global (`pop`, `push`, `fill`, `color`, `scale`, `image`, `text`, `line`, `key`…): it breaks p5 calls in that scope.

@@ -11,8 +11,16 @@ One music video, made from one copy of this template, driven by one Song. A vide
 _Avoid_: project, clip, film
 
 **Gate**:
-A point where making the MV stops until the person approves what is there. There are five: the Song Check, the Storyboard, the Leads' Model Sheets, the first Chapter and the Rough Cut.
+A point where making the MV stops until the person approves what is there. There are five: the Song Check, the Storyboard, the Leads' Model Sheets (skipped when the MV has no Leads), the first Chapter and the Rough Cut.
 _Avoid_: checkpoint, review step, milestone
+
+**Brief**:
+What the person settles before the Song is analysed, beyond their one sentence: the Mode, the format, Karaoke on or off, the Style Profile, and any references.
+_Avoid_: spec, requirements, settings
+
+**Mode**:
+What kind of MV it is, which decides what counts as an event: narrative (Characters with a want), performance (someone performing the song), mood (a world that transforms, maybe with no Characters) or lyric (the sung words painted into the picture).
+_Avoid_: genre, type, template
 
 **Storyboard**:
 The written plan of the whole MV, before any picture: its idea, Characters, Chapters, and every Shot with what happens, what the viewer must take in and when, and how each Seam is crossed.
@@ -79,11 +87,11 @@ The join between two Shots, or the very start or end of the MV. Every Seam has a
 _Avoid_: cut, edit point, chapter break
 
 **Sound Word**:
-A painted sound effect (FOOM, CHOMP) or a single word the joke needs; the only lettering allowed inside the picture, used a handful of times per MV and listed in the Storyboard.
+A painted sound effect (FOOM, CHOMP) or a single word the moment needs; the only lettering allowed inside the picture, used a handful of times per MV and listed in the Storyboard. In lyric Mode the sung words may be painted in too.
 _Avoid_: caption, label, sign, title
 
 **Lead**:
-A Character who carries the story across Chapters. Leads are designed before any Chapter is built and approved on a Model Sheet.
+A Character who carries the story across Chapters. Leads are designed before any Chapter is built and approved on a Model Sheet. An MV may have none.
 _Avoid_: main character, hero, protagonist
 
 **Guest**:

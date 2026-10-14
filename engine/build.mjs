@@ -16,6 +16,7 @@ import { fileURLToPath } from 'node:url';
 export const ROOT = resolve(fileURLToPath(import.meta.url), '../..');
 const DEFAULTS = {
   title: 'Untitled MV',
+  mode: 'narrative',       // or 'performance', 'mood', 'lyric' (GUIDE.md step 0); read by the model, not the engine
   format: '16:9',          // or '9:16' (YouTube Shorts: at most 3 minutes)
   style: 'watercolor',     // a folder in styles/
   karaoke: true,           // show each Lyric Line under the picture as it is sung

@@ -11,6 +11,17 @@ Hand-painted watercolour and boiling ink on paper, drawn with [p5.brush](https:/
 - **Soft palette, no pure black or white.** Use `PAL.ink` for black and `PAL.cream` or `PAL.paper` for white. Pick a small palette per MV (`"palette"` in mv.json adds or replaces colours) and keep every Character clearly readable against its background.
 - **One shape, one outline.** Build a creature or prop from as few outlines as you can, so it doesn't look like glued-on stickers: a tail is one `ribbon`, not five circles.
 
+## What to check
+
+GUIDE.md's review loop sends you here. In every sheet and strip, look for what makes this look fail:
+
+- plain p5 shapes (`rect`, `ellipse`, `fill()`) instead of `paint()` and `inkLine()`
+- 3D rotation, perspective boxes or projected turns
+- pure black or white instead of `PAL.ink` and `PAL.cream`/`PAL.paper`
+- a light painted as pigment, so yellow over blue went green: use `glow()`
+- creatures and props built from many glued-on outlines
+- outlines that turned into dark blobs under a zoomed camera (see the quirks below)
+
 ## Painting
 
 `paint(pts, o)` paints one shape from a point list `[[x, y], ...]`:
