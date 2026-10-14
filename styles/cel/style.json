@@ -1,0 +1,8 @@
+{
+  "name": "cel",
+  "description": "Hand-drawn cel animation: boiling variable-width ink, flat colour a little off-register, hard-edged shadow tones, on twos.",
+  "libraries": ["node_modules/p5/lib/p5.min.js"],
+  "fonts": "https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Shantell+Sans:wght@800&family=LXGW+WenKai+TC:wght@700&family=Klee+One:wght@600&display=block",
+  "scripts": ["palette.js", "shapes.js", "paint.js", "transitions.js"],
+  "defaults": { "hold": 2, "boil": 12 }
+}

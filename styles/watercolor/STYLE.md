@@ -2,6 +2,15 @@
 
 Hand-painted watercolour and boiling ink on paper, drawn with [p5.brush](https://github.com/acamposuribe/p5.brush). The look should pass for something painted by hand, frame by frame. This file holds the rules of the medium and its drawing API; [GUIDE.md](../../GUIDE.md) holds everything that doesn't depend on the look.
 
+## Signature features
+
+What makes it read as watercolour at a glance. The Style Sample Gate checks these.
+
+- Washes with **soft, bleeding edges** and pigment texture, colours that mix like paint.
+- **Boiling ink** outlines, tapered like a brush.
+- **Paper grain** under and through everything, with a soft vignette.
+- Light as an **added glow**, never painted.
+
 ## The rules of the medium
 
 - **Paint everything with `paint()` and `inkLine()`.** Characters and props get flat `wash` colour plus an ink outline. Backgrounds get soft watercolour `fill` shapes, usually with no outline or a thin one. Never use plain p5 shapes (`rect`, `ellipse`, `fill()`): they look like 2000s Flash.

@@ -21,12 +21,13 @@ const DEFAULTS = {
   style: 'watercolor',     // a folder in styles/
   karaoke: true,           // show each Lyric Line under the picture as it is sung
   fps: 24,
-  boil: 12,                // boil drawings per second
+  hold: 1,                 // frames each drawing holds: 2 animates on twos (12 drawings a second at 24 fps)
+  boil: 12,                // boil drawings per second; 0 = nothing boils
   palette: {},             // colours added to or replacing the Style Profile's PAL
   characters: [],          // Character files from elsewhere in the template, e.g. "examples/clawd/clawd.js"
   bpm: 120, duration: 10,  // only used when there is no song.json
 };
-const ENGINE = ['math.js', 'song.js', 'frame.js', 'geometry.js', 'acting.js', 'emotes.js', 'timeline.js', 'karaoke.js', 'songcheck.js'];
+const ENGINE = ['math.js', 'song.js', 'frame.js', 'geometry.js', 'acting.js', 'emotes.js', 'timeline.js', 'karaoke.js', 'songcheck.js', 'stylesample.js'];
 
 const readJSON = p => JSON.parse(readFileSync(p, 'utf8'));
 const jsIn = d => existsSync(d) ? readdirSync(d).filter(f => f.endsWith('.js')).sort().map(f => join(d, f)) : [];
@@ -34,7 +35,10 @@ const jsIn = d => existsSync(d) ? readdirSync(d).filter(f => f.endsWith('.js')).
 export function build(mvDir = '.') {
   const dir = resolve(ROOT, mvDir), rel = p => relative(ROOT, p).split('\\').join('/');
   const mvPath = join(dir, 'mv', 'mv.json');
-  const MV = { ...DEFAULTS, ...(existsSync(mvPath) ? readJSON(mvPath) : {}) };
+  const own = existsSync(mvPath) ? readJSON(mvPath) : {};
+  // the Style Profile's own defaults (style.json "defaults", e.g. hold or boil) sit between the template's and the MV's
+  const styleOf = name => readJSON(join(ROOT, 'styles', name, 'style.json'));
+  const MV = { ...DEFAULTS, ...(styleOf(own.style || DEFAULTS.style).defaults || {}), ...own };
   const songPath = join(dir, 'song', 'song.json');
   let SONG;
   if (existsSync(songPath)) {
@@ -47,7 +51,7 @@ export function build(mvDir = '.') {
     MV.audioPath = null;
   }
   MV.dir = rel(dir) || '.';
-  const style = readJSON(join(ROOT, 'styles', MV.style, 'style.json'));
+  const style = styleOf(MV.style);
   const scripts = [
     ...style.libraries,
     ...ENGINE.map(f => 'engine/' + f),

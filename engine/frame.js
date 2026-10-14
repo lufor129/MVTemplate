@@ -86,7 +86,8 @@ function draw() {
   push(); translate(-W * RS / 2, -H * RS / 2); scale(RS);
   BOILN = Math.floor(T * BOIL); CHAR_N = 0; boilSeed('frame'); noiseSeed(77);
   STYLE.underlay();
-  drawWorld(T);
+  // MV.hold > 1: every drawing holds that many frames (on twos at 2), the whole picture at once
+  drawWorld(MV.hold > 1 ? Math.floor(T * MV.fps / MV.hold + 1e-6) * MV.hold / MV.fps : T);
   pop();
 }
 function composite() {
