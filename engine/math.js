@@ -34,6 +34,20 @@ function mixCol(a, b, k) {
   return '#' + ((1 << 24) + (c(16) << 16) + (c(8) << 8) + c(0)).toString(16).slice(1);
 }
 
+// hex colour ⇄ [hue, saturation, lightness], each 0..1. Style Profiles tone every colour through these (their tone()).
+function hexHsl(hex) {
+  const n = parseInt(hex.slice(1, 7), 16), r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1)), h = mx === r ? ((g - b) / d + 6) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [h / 6, s, l];
+}
+function hslHex(h, s, l) {
+  s = clamp(s); l = clamp(l);
+  const a = s * Math.min(l, 1 - l), f = k => { const m = (k + h * 12) % 12; return Math.round(255 * (l - a * Math.max(-1, Math.min(m - 3, 9 - m, 1)))); };
+  return '#' + ((1 << 24) + (f(0) << 16) + (f(8) << 8) + f(4)).toString(16).slice(1);
+}
+
 // ---------- motion principles ----------
 // Damped spring kicked at t0: 0 before, then a wobble that dies away. Use it for secondary motion and settles: a body
 // after landing, a hat that jiggles, a stack that sways, a tail that drags. k = damping, w = wobble speed (rad/s).

@@ -4,10 +4,16 @@
 // units; a low-resolution render (?scale=0.5, the Rough Cut) shrinks the whole frame without changing any of them.
 //
 // The Style Profile (styles/<name>/) supplies the paint itself: paint(), inkLine(), glow(), the palette PAL, and
-// STYLE = { setup, underlay, overlay, flush, letterFont, fonts, karaoke } (see styles/README.md).
+// STYLE = { setup, underlay, overlay, flush, letterFont, fonts, karaoke, and optionally post and pose } (see
+// styles/README.md).
 const [W, H] = MV.format === '9:16' ? [1080, 1920] : [1920, 1080];
 const RS = +(new URLSearchParams(location.search).get('scale') || 1);   // render scale
 const BOIL = MV.boil ?? 12;                                              // boil drawings per second
+// The light: the way it travels, as a unit vector (from the upper left by default, or mv.json "light": [x, y]). Style
+// Profiles that shade by themselves (cel) read it. A Shot may set LIGHT for its own frames; every frame starts from
+// the MV's.
+const LIGHT0 = (([x, y]) => { const d = Math.hypot(x, y) || 1; return [x / d, y / d]; })(MV.light || [.55, .83]);
+let LIGHT = LIGHT0;
 
 // Seeded by the boil frame, so linework "boils" at BOIL fps like hand-drawn animation.
 const jit = a => (random() * 2 - 1) * a;
@@ -82,13 +88,14 @@ async function setup() {
 }
 function draw() {
   if (!window.ready) return;
-  LETTERS = []; CAM = LAST_CAM = null;
+  LETTERS = []; CAM = LAST_CAM = null; LIGHT = LIGHT0;
   push(); translate(-W * RS / 2, -H * RS / 2); scale(RS);
   BOILN = Math.floor(T * BOIL); CHAR_N = 0; boilSeed('frame'); noiseSeed(77);
   STYLE.underlay();
   // MV.hold > 1: every drawing holds that many frames (on twos at 2), the whole picture at once
   drawWorld(MV.hold > 1 ? Math.floor(T * MV.fps / MV.hold + 1e-6) * MV.hold / MV.fps : T);
   pop();
+  if (STYLE.post) STYLE.post();   // the Style Profile's pass over the whole painted frame (watercolour: pigment and edges)
 }
 function composite() {
   const c = outX;
@@ -102,7 +109,7 @@ window.renderAt = async (t, type = 'image/png', q = .92) => { T = t; await redra
 // that region of the frame, at full resolution (for checking faces, hands and contacts up close). at = [x, y, w, h]
 // instead crops w × h around the WORLD point (x, y), wherever each frame's camera put it (a foot, a splash, a prop on
 // a moving shot); x and y may be expressions evaluated in the page.
-window.renderSheet = async (times, cols = 3, w = 640, crop = null, at = null) => {
+window.renderSheet = async (times, cols = 3, w = 640, crop = null, at = null, tag = null) => {
   if (at) at = at.map((v) => typeof v === 'string' ? (0, eval)(v) : v);
   const [, , cw, ch] = at || crop || [0, 0, W, H], h = Math.round(w * ch / cw), rows = Math.ceil(times.length / cols), sc = document.createElement('canvas');
   sc.width = cols * w; sc.height = rows * h; const c = sc.getContext('2d'), ms = [];
@@ -110,7 +117,8 @@ window.renderSheet = async (times, cols = 3, w = 640, crop = null, at = null) =>
     const t0 = performance.now(); T = times[i]; await redraw(); composite(); ms.push(Math.round(performance.now() - t0));
     const x = (i % cols) * w, y = Math.floor(i / cols) * h;
     const [cx, cy] = at ? toScreen(at[0], at[1], LAST_CAM).map((v, j) => v - (j ? ch : cw) / 2) : crop || [0, 0];
-    c.drawImage(outC, cx * RS, cy * RS, cw * RS, ch * RS, x, y, w, h); c.fillStyle = 'rgba(0,0,0,.65)'; c.fillRect(x, y, 84, 24); c.fillStyle = '#fff'; c.font = '15px sans-serif'; c.fillText(times[i].toFixed(2) + 's', x + 6, y + 17);
+    c.drawImage(outC, cx * RS, cy * RS, cw * RS, ch * RS, x, y, w, h); c.fillStyle = 'rgba(0,0,0,.65)'; c.font = '15px sans-serif';
+    const lab = tag ?? times[i].toFixed(2) + 's'; c.fillRect(x, y, c.measureText(lab).width + 14, 24); c.fillStyle = '#fff'; c.fillText(lab, x + 6, y + 17);
   }
   return { url: sc.toDataURL('image/jpeg', .9), ms };
 };

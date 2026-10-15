@@ -1,4 +1,4 @@
-// paint.js: the watercolour Style Profile's drawing primitives, on p5.brush: flat washes, bleeding watercolour fills,
+// paint.js: the watercolour Style Profile's drawing primitives, on p5.brush: toned washes, bleeding watercolour fills,
 // boiling ink outlines, additive light, and the paper everything sits in. See STYLE.md for the rules of the look.
 
 // ---------- paint ----------
@@ -12,24 +12,52 @@ function centred(pts, draw) {
   const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
   push(); translate(cx, cy); draw(pts.map(([x, y]) => [x - cx, y - cy])); pop();
 }
+// Watercolour is light and soft: every colour that reaches paint() is lifted toward the paper and calmed a little,
+// Characters' own included; the darks stay dark. Lines are a warm sepia ink, not black.
+const _toned = new Map(), SEPIA = '#7A5240', LINE_W = .8;
+function tone(c) {
+  if (typeof c !== 'string' || c[0] !== '#') return c;
+  let v = _toned.get(c);
+  if (!v) { const [h, s, l] = hexHsl(c), k = clamp((l - .15) / .25); v = hslHex(h, s * lerp(1, .8, k), l + (1 - l) * .16 * k); _toned.set(c, v); }
+  return v;
+}
+const _lined = new Map();
+function lineCol(c) { let v = _lined.get(c); if (!v) { v = mixCol(c, SEPIA, .6); _lined.set(c, v); } return v; }
+
 function paint(pts, o = {}) { centred(pts, (P) => paintAt(P, o)); }
 function paintAt(pts, o) {
   if (o.wash || o.fill || o.hatch) {
-    if (o.wash) brush.wash(o.wash, o.washOp ?? 255); else brush.noWash();
-    if (o.fill) { brush.fill(o.fill, o.fillOp ?? 170); brush.fillBleed(o.bleed ?? .1); brush.fillTexture(o.tex ?? .4, o.border ?? .35); } else brush.noFill();
-    if (o.hatch) { brush.hatch(o.hatch.d, o.hatch.a, o.hatch.o || { rand: .15 }); brush.hatchStyle(o.hatch.b || 'HB', o.hatch.c || PAL.ink, o.hatch.w || 1); } else brush.noHatch();
+    if (o.wash) brush.wash(tone(o.wash), o.washOp ?? 255); else brush.noWash();
+    if (o.fill) { brush.fill(tone(o.fill), o.fillOp ?? 170); brush.fillBleed(o.bleed ?? .1); brush.fillTexture(o.tex ?? .4, o.border ?? .35); } else brush.noFill();
+    if (o.hatch) { brush.hatch(o.hatch.d, o.hatch.a, o.hatch.o || { rand: .15 }); brush.hatchStyle(o.hatch.b || 'HB', lineCol(o.hatch.c || PAL.ink), o.hatch.w || 1); } else brush.noHatch();
     brush.noStroke();
     if (o.curv) { brush.beginShape(o.curv); for (const p of pts) brush.vertex(p[0], p[1]); brush.endShape(true); }
     else brush.polygon(pts);
   }
-  // the outline is one continuous tapered stroke, not a stroke per side
-  if (o.ink !== null) {
-    brush.noWash(); brush.noFill(); brush.noHatch(); brush.set(o.br || 'ink', o.ink || PAL.ink, o.sw ?? 1);
-    brush.beginShape(o.curv || 0); for (const p of pts) brush.vertex(p[0], p[1]); brush.endShape(true);
-  }
+  if (o.ink !== null) lostEdges(pts, o.curv || 0, (o.sw ?? 1) * LINE_W, lineCol(o.ink || PAL.ink), o.br || 'ink');
 }
 function inkLine(pts, sw = 1, col = PAL.ink, br = 'ink', curv = .5) {
-  centred(pts, (P) => { brush.noFill(); brush.noWash(); brush.noHatch(); brush.set(br, col, sw); brush.spline(P, curv); });
+  centred(pts, (P) => { brush.noFill(); brush.noWash(); brush.noHatch(); brush.set(br, lineCol(col), sw * LINE_W); brush.spline(P, curv); });
+}
+// A watercolourist's outline is lost where the light hits: the edge facing LIGHT (frame.js) is left unlined and the
+// shape reads by its wash alone there; the rest is one tapered stroke per run, not a stroke per side. Small shapes
+// (eyes, buttons) keep their whole line.
+function lostEdges(pts, curv, sw, col, br) {
+  brush.noWash(); brush.noFill(); brush.noHatch(); brush.set(br, col, sw);
+  let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity, A = 0;
+  for (let i = 0; i < pts.length; i++) { const [x, y] = pts[i], q = pts[(i + 1) % pts.length]; x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); A += x * q[1] - q[0] * y; }
+  if (Math.min(x1 - x0, y1 - y0) < 30 || pts.length < 4) { brush.beginShape(curv); for (const p of pts) brush.vertex(p[0], p[1]); brush.endShape(true); return; }
+  // resample, then keep the points whose outward normal doesn't face the light
+  const S = [], n0 = pts.length, step = Math.max(6, Math.hypot(x1 - x0, y1 - y0) / 40), sg = A > 0 ? 1 : -1;
+  for (let i = 0; i < n0; i++) { const a = pts[i], b = pts[(i + 1) % n0], k = Math.max(1, Math.round(Math.hypot(b[0] - a[0], b[1] - a[1]) / step)); for (let j = 0; j < k; j++) S.push([lerp(a[0], b[0], j / k), lerp(a[1], b[1], j / k)]); }
+  const n = S.length, lit = S.map((p, i) => { const a = S[(i - 1 + n) % n], b = S[(i + 1) % n], nx = sg * (b[1] - a[1]), ny = -sg * (b[0] - a[0]), d = Math.hypot(nx, ny) || 1; return -(nx * LIGHT[0] + ny * LIGHT[1]) / d > .45; });
+  if (!lit.some(v => v)) { brush.beginShape(curv); for (const p of pts) brush.vertex(p[0], p[1]); brush.endShape(true); return; }
+  if (lit.every(v => v)) return;
+  const s0 = lit.findIndex(v => v);   // walk round once from a lit point, so every run starts and ends at a gap
+  let run = [];
+  const end = () => { if (run.length > 2) brush.spline(run, .5); run = []; };
+  for (let k = 1; k <= n; k++) { const i = (s0 + k) % n; if (lit[i]) end(); else run.push(S[i]); }
+  end();
 }
 
 // Light: glow(x, y, r, col, a) ADDS a soft halo of light for anything that shines (stars, lamps, fireflies, magic).
@@ -79,12 +107,38 @@ function makeGrain() {
   return cv;
 }
 
+// ---------- pigment ----------
+// The pass over the whole painted frame (STYLE.post) that makes flat washes read as watercolour: pigment pools at the
+// edges where one colour meets another, settles unevenly in big soft blotches and fine paper granulation, and every
+// edge drifts a pixel or two with the boil. Darkening follows pigment, C' = C − (C − C²)(d − 1), so the paper and the
+// darkest ink are left alone and the mid-tones carry the texture.
+const PIGMENT_FS = `precision highp float;
+uniform sampler2D tex0; uniform vec2 texelSize; uniform float seed; uniform float rs;
+varying vec2 vTexCoord;
+float h(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
+float n(vec2 p) { vec2 i = floor(p), f = fract(p); f = f * f * (3. - 2. * f); return mix(mix(h(i), h(i + vec2(1, 0)), f.x), mix(h(i + vec2(0, 1)), h(i + vec2(1, 1)), f.x), f.y); }
+float fbm(vec2 p) { float s = 0., a = .5; for (int i = 0; i < 4; i++) { s += a * n(p); p *= 2.03; a *= .5; } return s; }
+void main() {
+  vec2 fp = vTexCoord / texelSize / rs;
+  vec2 wob = (vec2(n(fp * .03 + seed * 3.1), n(fp * .03 + 41. + seed * 2.3)) - .5) * 3.2 * rs;
+  vec2 uv = vTexCoord + wob * texelSize;
+  vec3 c = texture2D(tex0, uv).rgb, b = vec3(0.);
+  for (int i = 0; i < 8; i++) { float a = float(i) * .785; b += texture2D(tex0, uv + vec2(cos(a), sin(a)) * 3.5 * rs * texelSize).rgb; }
+  b /= 8.;
+  float edge = clamp(length(c - b) * 3., 0., 1.);
+  float d = 1. + (fbm(fp * .005) - .5) * .55 + (n(fp * .7) - .5) * .22 + edge * .7;
+  gl_FragColor = vec4(clamp(c - (c - c * c) * (d - 1.), 0., 1.), 1.);
+}`;
+let pigmentSh = null;
+
 // ---------- the Style Profile's hooks ----------
 let paperG = null, grainC = null;
-const KARAOKE_FONT = '"Shantell Sans", "LXGW WenKai TC", "Klee One", sans-serif';
+const KARAOKE_FONT = '"LXGW WenKai TC", "Klee One", serif';
 const STYLE = {
-  fonts: ['Permanent Marker', 'Shantell Sans', 'LXGW WenKai TC', 'Klee One'],
+  fonts: ['Permanent Marker', 'LXGW WenKai TC', 'Klee One'],
+  post() { flushBrush(); pigmentSh.setUniform('seed', BOILN % 61); pigmentSh.setUniform('rs', RS); filter(pigmentSh); },
   async setup() {
+    pigmentSh = createFilterShader(PIGMENT_FS);
     brush.scaleBrushes(5);
     brush.add('ink', { type: 'default', weight: 5, scatter: .25, sharpness: .8, grain: 40, opacity: 235, spacing: .2, pressure: [1.15, .75], rotate: 'natural', noise: .15 });
     brush.add('inkfine', { type: 'default', weight: 2.6, scatter: .15, sharpness: .85, grain: 40, opacity: 230, spacing: .2, pressure: [1.1, .8], rotate: 'natural', noise: .1 });
@@ -97,27 +151,27 @@ const STYLE = {
   letterFont: size => `${size}px "Permanent Marker", "LXGW WenKai TC", "Klee One", cursive`,
   karaoke: {
     size: MV.format === '9:16' ? 54 : 50,
-    // a ragged ink-and-violet brushstroke behind the line, growing in from the centre
+    // a pale wash laid behind the line, ragged at the ends, growing in from the centre
     band(K) {
-      const c = outX, sz = this.size; c.font = `800 ${sz}px ${KARAOKE_FONT}`;
+      const c = outX, sz = this.size; c.font = `700 ${sz}px ${KARAOKE_FONT}`;
       const rows = karaokeRows(c, K.text, W - 160), tw = Math.max(...rows.map(r => c.measureText(K.text.slice(r.from, r.to)).width));
-      const w = (tw + 110) * K.grow, x0 = W / 2 - w / 2, y0 = K.top + 8, hh = 88 + (rows.length - 1) * sz * 1.25;
+      const w = (tw + 120) * K.grow, x0 = W / 2 - w / 2, y0 = K.top + 8, hh = 88 + (rows.length - 1) * sz * 1.25;
       boilSeed('karaoke');
-      const pts = [[x0 + jit(8), y0 + jit(4)], [x0 + w / 2, y0 - 4 + jit(4)], [x0 + w + jit(8), y0 + jit(4)], [x0 + w + 14 + jit(8), y0 + hh / 2], [x0 + w + jit(8), y0 + hh + jit(4)], [x0 + w / 2, y0 + hh + 4 + jit(4)], [x0 + jit(8), y0 + hh + jit(4)], [x0 - 14 + jit(8), y0 + hh / 2]];
-      paint(pts, { wash: PAL.ink, washOp: 225, fill: PAL.violet, fillOp: 60, tex: .7, border: .4, ink: null });
+      const pts = [[x0 + jit(8), y0 + 6 + jit(4)], [x0 + w / 2, y0 + jit(4)], [x0 + w + jit(8), y0 + 6 + jit(4)], [x0 + w + 18 + jit(8), y0 + hh / 2], [x0 + w + jit(8), y0 + hh - 6 + jit(4)], [x0 + w / 2, y0 + hh + jit(4)], [x0 + jit(8), y0 + hh - 6 + jit(4)], [x0 - 18 + jit(8), y0 + hh / 2]];
+      paint(pts, { wash: PAL.cream, washOp: 230, fill: PAL.sky, fillOp: 50, bleed: .08, tex: .6, border: .7, ink: null, curv: .5 });
       K.rows = rows;
     },
-    // cream letters, turning ochre as they are sung
+    // sepia letters, turning rose as they are sung
     text(c, K) {
-      const sz = this.size; c.font = `800 ${sz}px ${KARAOKE_FONT}`; c.textBaseline = 'middle'; c.textAlign = 'left';
+      const sz = this.size; c.font = `700 ${sz}px ${KARAOKE_FONT}`; c.textBaseline = 'middle'; c.textAlign = 'left';
       const rows = K.rows || [{ from: 0, to: K.text.length }], y0 = K.top + 8 + 44;
       rows.forEach((r, ri) => {
         const s = K.text.slice(r.from, r.to), w = c.measureText(s).width, x = W / 2 - w / 2, y = y0 + ri * sz * 1.25;
-        c.fillStyle = PAL.cream; c.fillText(s, x, y);
+        c.fillStyle = lineCol(PAL.ink); c.fillText(s, x, y);
         const n = clamp(K.sung - r.from, 0, s.length);
         if (n > 0) {
           const i = Math.floor(n), cw = c.measureText(s.slice(0, i)).width, nw = c.measureText(s.slice(0, Math.min(s.length, i + 1))).width;
-          c.save(); c.beginPath(); c.rect(x - 2, y - sz, lerp(cw, nw, n - i) + 2, sz * 2); c.clip(); c.fillStyle = PAL.ochre; c.fillText(s, x, y); c.restore();
+          c.save(); c.beginPath(); c.rect(x - 2, y - sz, lerp(cw, nw, n - i) + 2, sz * 2); c.clip(); c.fillStyle = mixCol(PAL.rose, PAL.clayDk, .35); c.fillText(s, x, y); c.restore();
         }
       });
     },

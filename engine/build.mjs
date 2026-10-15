@@ -32,10 +32,11 @@ const ENGINE = ['math.js', 'song.js', 'frame.js', 'geometry.js', 'acting.js', 'e
 const readJSON = p => JSON.parse(readFileSync(p, 'utf8'));
 const jsIn = d => existsSync(d) ? readdirSync(d).filter(f => f.endsWith('.js')).sort().map(f => join(d, f)) : [];
 
-export function build(mvDir = '.') {
+// over: settings that win over mv.json for this build only (render.mjs --style=<name>, for the Style Sample's lineup).
+export function build(mvDir = '.', over = {}) {
   const dir = resolve(ROOT, mvDir), rel = p => relative(ROOT, p).split('\\').join('/');
   const mvPath = join(dir, 'mv', 'mv.json');
-  const own = existsSync(mvPath) ? readJSON(mvPath) : {};
+  const own = { ...(existsSync(mvPath) ? readJSON(mvPath) : {}), ...over };
   // the Style Profile's own defaults (style.json "defaults", e.g. hold or boil) sit between the template's and the MV's
   const styleOf = name => readJSON(join(ROOT, 'styles', name, 'style.json'));
   const MV = { ...DEFAULTS, ...(styleOf(own.style || DEFAULTS.style).defaults || {}), ...own };

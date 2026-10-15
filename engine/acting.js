@@ -33,6 +33,7 @@
 function character(spec) {
   const ch = (x, y, u, o = {}) => {
     const id = o.boilKey ?? `${spec.name} ${++CHAR_N}`;
+    o = STYLE.pose ? STYLE.pose(o) : o;   // the Style Profile's way of moving (cut-out paper doesn't squash)
     spec.draw(x, y, u, { ...o, boilKey: id });
     boilSeed(`${id} emote`);
     if (o.emote) {

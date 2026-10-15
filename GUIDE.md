@@ -52,11 +52,14 @@ The sentence says what the MV is about; settle what it leaves open before anythi
 
 Also ask whether they have references (a character to reuse, photos, colours, an MV they love). Put any files in `mv/refs/` and look at them. Write the answers into `mv/mv.json` (`title`, `mode`, `format`, `karaoke`, `style`).
 
-**A new style.** If the person asked for a look no Style Profile has, make one in this MV's copy before going on, as [styles/README.md](styles/README.md) describes: `styles/<name>/` with its `style.json`, a `STYLE.md` (the rules of the medium, its drawing API, its "Signature features" and a "What to check" list) and scripts that define every global in that table, so the engine, the Characters and the Chapters draw with it unchanged. Start from a copy of the profile closest to the look (`watercolor/` paints with p5.brush; `cel/`, `cutout/` and `pixel/` draw plain p5 shapes) and change what the look needs. The engine's `style-sample` loop shows any profile off: a sky, hills, a hatched rock, a sun and its light, a Character acting and jumping (the Lead, or Clawd, when mv.json lists it in `characters`), an emote, a Sound Word, a brush wipe and the karaoke band. Render it and check it against the Signature features:
+**A new style.** If the person asked for a look no Style Profile has, make one in this MV's copy before going on, as [styles/README.md](styles/README.md) describes: `styles/<name>/` with its `style.json`, a `STYLE.md` (the rules of the medium, its drawing API, its "Signature features" and a "What to check" list) and scripts that define every global in that table, so the engine, the Characters and the Chapters draw with it unchanged. Start from a copy of the profile closest to the look (`watercolor/` paints with p5.brush; `cel/`, `cutout/` and `pixel/` draw plain p5 shapes) and change what the look needs: not only the texture, but everything styles/README.md lists under "A look of its own" (how it tones colour, shades with the light, draws lines, moves, letters), or it will look like the profile it came from. The engine's `style-sample` loop shows any profile off: a sky, hills, a hatched rock, a sun and its light, a Character acting and jumping (the Lead, or Clawd, when mv.json lists it in `characters`), an emote, a Sound Word, a brush wipe and the karaoke band. Render it and check it against the Signature features:
 
 ```bash
 node engine/render.mjs --loop=style-sample --sheet=0.5,1.6,2.75,3.5 --cols=2 --w=1600 --out=out/check/style_sample.jpg
+node engine/lineup.mjs                     # the squint test: every profile, small, side by side → out/check/style_lineup.jpg
 ```
+
+In the lineup, the new profile must be told from every other at a glance. If it can't, change more than the texture.
 
 🚦 **Style Sample.** Show the person the sheet and ask whether this is the look. Revise it until they approve. If it turns out well, bring the profile back to the template afterwards so the next MV can pick it.
 
@@ -281,6 +284,7 @@ Open each image with the Read tool and actually look at it. Check:
 | `engine/karaoke.js`, `engine/songcheck.js` | the karaoke and the Song Check |
 | `engine/stylesample.js` | the `style-sample` loop, for the Style Sample Gate |
 | `engine/build.mjs`, `engine/render.mjs` | gather the MV into `.build/mv.js`; render sheets, clips, the Gates' videos |
+| `engine/lineup.mjs` | the style-sample in every Style Profile, side by side, for the Style Sample Gate |
 | `styles/<name>/` | the Style Profile: STYLE.md, its primitives, transitions, karaoke look |
 | `examples/clawd/` | Clawd, an example Character |
 | `tools/song/` | the song analysis |
@@ -333,6 +337,7 @@ Open each image with the Read tool and actually look at it. Check:
 - **Progress and keys:** `seg(t, a, b)` (0..1 through [a, b]), `kf(t, [[t0, v0], [t1, v1], ...], ease)` (keyframes; values may be arrays), `lerp`, `clamp`, `frac`, `wob(t, freq, phase)`, `TAU`.
 - **Easing:** `ease`, `easeIn`, `easeOut`, `backOut` (overshoot), `elasticOut`.
 - **Acting:** `jump(t, t0, t1, h)` → `{dy, sq}`; `take(t, t0, amt)` → `{sq, dy}`; `spring(t, t0, k, w)`; `ring(t, [t0, …])`; `arcPt(p0, p1, h, k)`; `onTwos(t)` (hold each drawing two frames).
+- **Light:** `LIGHT = [x, y]`, the way the light travels in this Shot (from the upper left by default, or mv.json `"light"`). Style Profiles that shade by themselves read it: cel puts its shadow sides away from it, watercolour loses its lines toward it.
 - **Camera:** `camBegin(cx, cy, zoom, rot)` … `camEnd()` (world point to screen centre; one level; always pair them); `toScreen(x, y)`; `shakeXY(t, amount)`.
 - **Lettering** (Sound Words, and painted lines in lyric mode): `letter(txt, x, y, size, colour, {pop, rot, alpha, screen})`, `sfx(txt, x, y, size, colour, age)`. Composited at `flushLetters()`, after the Shot; call it yourself before a wipe that must cover them.
 - **Loops:** `LOOPS.name = t => {...}; LOOPS.name.len = 4;` makes a standalone loop (tests, GIFs, sheets), rendered with `--loop=name`.

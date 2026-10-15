@@ -9,16 +9,18 @@ renders several times faster than watercolour. This file holds the rules of the 
 
 What makes it read as cel at a glance. The Style Sample Gate checks these.
 
-- Ink lines that **boil**: redrawn slightly differently 12 times a second, thick and thin like a pressed brush.
-- **Flat colour** in every shape, printed a couple of pixels off its line, like hand colouring.
-- **Hard-edged shadow and light tones**: one flat darker shape for shade, one lighter for a highlight, never a gradient.
+- **Bold** ink lines that **boil**: redrawn slightly differently 12 times a second, thick and thin like a pressed brush.
+- **Saturated flat colour** in every shape, printed a couple of pixels off its line, like hand colouring.
+- **A hard shadow side on every solid shape**, found from the light, cool and flat, never a gradient; big shapes get a thin lit edge too.
+- **Broad acting**: squash, stretch and smears pushed further than the Character asks (`STYLE.pose`).
 - **On twos**: every drawing holds two frames (style.json sets `hold: 2`), so motion has a hand-made snap.
-- Warm animation paper under everything.
+- The karaoke as **rounded subtitle letters** with a thick ink edge, no band.
 
 ## The rules of the medium
 
 - **Ink every solid shape.** Characters and props get `wash` plus an ink outline. Backgrounds may drop the outline (`ink: null`) for distance, but the near ground keeps one.
-- **Shade with flat shapes.** `fill` is a flat tone with a hard edge: use it for the shadow side, cast shadows and highlights, one or two per surface. Don't stack many translucent fills to fake a gradient.
+- **The shadow side paints itself.** Every `wash` gets a hard shadow tone on the side away from `LIGHT` (frame.js; from the upper left unless a Shot sets it). Point `LIGHT` at the scene's real light (a window on the right: `LIGHT = [-1, .2]`); pass `shade: false` for shapes that must stay flat (a screen, a sign, a pupil). Use `fill` for what the light can't find by itself: cast shadows, one extra tone. Don't stack many translucent fills to fake a gradient.
+- **Colour goes clean and saturated.** `paint()` tones every colour for you (`tone()`), Characters' own included, so a muted palette still lands bright.
 - **The lines boil.** `jit()` and `random()` are reseeded `MV.boil` times a second (12). Call `boilSeed(key)` before each separate element, or one moving thing makes everything drawn after it jitter. Characters seed themselves.
 - **Everything is flat 2D. Never project 3D.** Characters turn through drawn key views (`ch.turn()`); depth comes from overlap, scale and colour.
 - **Light is `glow()`**, added on top, never a painted gradient.
@@ -31,6 +33,7 @@ GUIDE.md's review loop sends you here. In every sheet and strip, look for:
 
 - solid shapes with no ink line, or a line so thin it disappears at the shot's zoom
 - shading that looks like a gradient (many stacked fills) instead of one or two hard tones
+- shadow sides that contradict the scene's light (set `LIGHT`), or a shadow on something that should be flat (`shade: false`)
 - lines that don't boil in a strip, or boil every frame (a missing `boilSeed`)
 - 3D rotation, perspective boxes or projected turns
 - pure black or white instead of `PAL.ink` and `PAL.cream`/`PAL.paper`
@@ -42,7 +45,8 @@ GUIDE.md's review loop sends you here. In every sheet and strip, look for:
 
 | option | meaning |
 |---|---|
-| `wash, washOp` | flat colour (opacity 0–255), a little off-register |
+| `wash, washOp` | flat colour (opacity 0–255), a little off-register, with its shadow side (and, on big shapes, a lit edge) found from `LIGHT` |
+| `shade` | `false`: no shadow side on this shape |
 | `fill, fillOp` | a flat tone over it, hard-edged: shade, light, cast shadow. `bleed`, `tex` and `border` are ignored |
 | `hatch: { d, a, o: { rand }, b, c, w }` | hatching lines (spacing, angle, randomness, brush, colour, weight) |
 | `ink, sw, br` | outline colour (default `PAL.ink`), weight (~.4–2), brush. **`ink: null` means no outline.** |
@@ -63,11 +67,12 @@ Screen-space marks for crossing a Seam (call them after `camEnd()`). The Storybo
 
 ## Karaoke and lettering
 
-- The karaoke band is an inked rounded band under the picture; each word turns from cream to ochre as it's sung. Fonts: Shantell Sans for Latin script, LXGW WenKai TC for Chinese, Klee One for Japanese.
-- Sound Words (`letter()`, `sfx()`) use Permanent Marker with an ink drop shadow.
+- The karaoke has no band: the line is lettered in Chiron GoRound TC (Klee One for what it lacks), cream with a thick ink edge, like a broadcast subtitle; each word turns yellow as it's sung.
+- Sound Words (`letter()`, `sfx()`) use Bangers with an ink drop shadow.
 
 ## Quirks
 
 - Line weight is in world units, so it grows with the camera's zoom.
+- The shadow side is a stencil clip per shape; it costs about as much as the shape itself.
 - Cost is the number of shapes: a frame of a few hundred costs well under 0.5 s. Non-convex shapes (a C, a ring) are tessellated and cost more than blobs, rects and ellipses.
 - To animate on ones instead (smooth camera moves, a fast whip pan), set `"hold": 1` in mv.json.

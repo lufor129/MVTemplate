@@ -1,8 +1,8 @@
 {
   "name": "cutout",
-  "description": "Paper cut-out: scissor-cut coloured paper with small shadows, halftone shading and paper-strip lines on kraft card; nothing boils, on twos.",
+  "description": "Paper cut-out: muted fibrous paper cut in straight snips with no outlines, each piece casting a shadow, halftone shading; nothing boils or squashes, on twos.",
   "libraries": ["node_modules/p5/lib/p5.min.js"],
-  "fonts": "https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Shantell+Sans:wght@800&family=LXGW+WenKai+TC:wght@700&family=Klee+One:wght@600&display=block",
+  "fonts": "https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Noto+Serif+TC:wght@900&family=Klee+One:wght@600&display=block",
   "scripts": ["palette.js", "shapes.js", "paint.js", "transitions.js"],
   "defaults": { "hold": 2, "boil": 0 }
 }

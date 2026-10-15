@@ -14,7 +14,8 @@
 //     --stills=1.2,3.4 --out=out/stills                                      full-res PNGs
 //     --clip=12:20 --out=out/check/clip.mp4                                  a stretch straight to MP4, with the song
 //   Loops (LOOPS in the page): add --loop=<name> (times are then loop times); --png renders one cycle as PNGs.
-//   Other flags: --scale=0.5 (render smaller), --fps=24, --audio=<file>, --chrome=<path>, --soft-gl,
+//   Other flags: --style=<name> (another Style Profile, for this render only), --tag=<text> (a sheet's cell label),
+//   --scale=0.5 (render smaller), --fps=24, --audio=<file>, --chrome=<path>, --soft-gl,
 //   --gpu-angle=vulkan|gl-egl (headless Linux on NVIDIA).
 //   --rough and --final are resumable: frames already on disk are kept (delete the frames folder to start over).
 import puppeteer from 'puppeteer-core';
@@ -26,7 +27,7 @@ import { homedir } from 'node:os';
 import { build, ROOT } from './build.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, ...v] = a.replace(/^--/, '').split('='); return [k, v.length ? v.join('=') : true]; }));
-const { MV, dir: MVDIR } = build(args.mv || '.');
+const { MV, dir: MVDIR } = build(args.mv || '.', args.style ? { style: args.style } : {});
 const OUT = join(MVDIR, 'out'), at = p => resolve(process.cwd(), p);
 const mode = args.songcheck ? 'songcheck' : args.rough ? 'rough' : args.final ? 'final' : null;
 const scale = +(args.scale || (mode === 'rough' || mode === 'songcheck' ? .5 : 1));
@@ -120,7 +121,7 @@ if (args.sheet || args.strip) {
   if (args.strip) { const [a, b] = span(args.strip); ts = []; for (let i = Math.round(a * fps); i <= Math.round(b * fps); i++) ts.push(i / fps); }
   else ts = times(args.sheet);
   const crop = args.crop ? times(args.crop) : null, cat = args['crop-at'] ? fields(args['crop-at']) : null;
-  const { url, ms } = await page.evaluate((ts, c, w, crop, at) => window.renderSheet(ts, c, w, crop, at), ts, +(args.cols || (args.strip ? 6 : 3)), +(args.w || (args.strip ? 320 : 640)), crop, cat);
+  const { url, ms } = await page.evaluate((ts, c, w, crop, at, tag) => window.renderSheet(ts, c, w, crop, at, tag), ts, +(args.cols || (args.strip ? 6 : 3)), +(args.w || (args.strip ? 320 : 640)), crop, cat, args.tag || null);
   writeFileSync(out, Buffer.from(url.slice(url.indexOf(',') + 1), 'base64'));
   console.log(`${out}  (${ts.length} frames)  ms/frame: ${ms.join(' ')}`);
 } else if (args.stills) {

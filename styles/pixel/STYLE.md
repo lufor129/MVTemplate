@@ -15,7 +15,7 @@ What makes it read as pixel art at a glance. The Style Sample Gate checks these.
 - **Ordered dithering** (a checker of two colours) wherever colours blend: glows, see-through fills, skies.
 - **Dark one-pixel outlines** on Characters and props.
 - A **dialog box** for the karaoke, lettered in a pixel font.
-- **Nothing boils, on twos** (style.json sets `boil: 0`, `hold: 2`).
+- **Nothing boils, on twos** (style.json sets `boil: 0`, `hold: 2`); sprites don't smear (`STYLE.pose`).
 
 ## The rules of the medium
 

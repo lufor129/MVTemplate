@@ -111,5 +111,5 @@ The look-independent ways a Character performs: emotion changes, turns through k
 _Avoid_: animation helpers, moves
 
 **Style Profile**:
-One complete way of putting paint on the frame: its drawing primitives, its palette and its rules of what the look forbids.
+One complete look: its drawing primitives and palette, and how it tones every colour, shades with the light, draws lines, moves Characters and letters the karaoke, with its rules of what the look forbids.
 _Avoid_: theme, skin, renderer

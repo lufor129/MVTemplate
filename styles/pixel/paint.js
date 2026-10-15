@@ -96,6 +96,8 @@ const STYLE = {
     if (_sungK) { _pixelText(c, _sungK, w / W); _sungK = null; }
   },
   flush() {},
+  // sprites don't smear: a fast move is a jump between drawings
+  pose: o => ({ ...o, smear: 0 }),
   letterFont: size => size < 40 ? `${size}px "DotGothic16", monospace` : `${size}px "Press Start 2P", "DotGothic16", monospace`,
   karaoke: {
     // a dialog box, like an old game's: dark, with a light border, opening from the centre
