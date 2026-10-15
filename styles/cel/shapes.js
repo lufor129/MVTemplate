@@ -57,7 +57,7 @@ function _resample(P, step, closed = true) {
 }
 // Move every point of a closed polygon `e` outward (negative: inward).
 function _offset(P, e) {
-  const s = _area(P) > 0 ? -1 : 1, n = P.length;
+  const s = _area(P) > 0 ? 1 : -1, n = P.length;
   return P.map((p, i) => {
     const a = P[(i - 1 + n) % n], b = P[(i + 1) % n];
     let nx = (p[1] - a[1]) + (b[1] - p[1]), ny = -(p[0] - a[0]) - (b[0] - p[0]); const d = Math.hypot(nx, ny) || 1;
