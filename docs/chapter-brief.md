@@ -12,7 +12,7 @@ You are building one Chapter of a music video, in parallel mode. Other subagents
 3. GLOSSARY.md
 4. `<mv>/mv/STORYBOARD.md`: the whole thing (Logline, Mode, Motif, Cast, Sound Words, Lyric Reading, the answered questions), then your Chapter's Shots and its neighbours'.
 5. The Chapters already built in `<mv>/mv/chapters/`, first of all the first Chapter: the example to match in look, Character scale, background density, camera energy, boilSeed discipline, and how timing hangs off Lyric Lines, words and the Beat Grid.
-6. The shared files you'll use (read, never edit): everything in `<mv>/mv/characters/`, the Characters listed in `<mv>/mv/mv.json`, engine/acting.js, engine/song.js, engine/timeline.js, and the Style Profile's scripts (its transitions above all).
+6. The shared files you'll use (read, never edit): everything in `<mv>/mv/characters/`, the Characters listed in `<mv>/mv/mv.json`, engine/acting.js, engine/body.js (people), engine/song.js, engine/timeline.js, and the Style Profile's scripts (its transitions above all).
 
 ## Timing
 - Print the Lyric Lines with their indices, times and word times before you start (`node -e` over `<mv>/song/song.json`).
@@ -26,7 +26,7 @@ You are building one Chapter of a music video, in parallel mode. Other subagents
 - Call `boilSeed('<unique key>')` before each separate background element, prop or effect; give Characters that come and go a stable `boilKey`.
 - Keep faces and key action above `KARAOKE_TOP` while a line is showing.
 - Don't name a local variable after a p5 global (`pop`, `push`, `fill`, `color`, `scale`, `image`, `text`, `line`, `key`…): it breaks p5 calls in that scope.
-- Guests you introduce are designed in your file. If your brief says one goes on `CAST`, define `CAST.<name> = (x, y, s, t, o) => …`, standing on (x, y), `s` on the Lead's size scale.
+- Guests you introduce are designed in your file (a person: a `person()` design). If your brief says one goes on `CAST`, define `CAST.<name> = (x, y, s, t, o) => …`, standing on (x, y), `s` on the Lead's size scale.
 - Don't commit to git.
 
 ## Review loop (budget)

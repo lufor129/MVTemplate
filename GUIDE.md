@@ -117,15 +117,26 @@ Check it against the rules: an event in every Shot? Every read has time to land?
 
 Skip this step and its Gate when the Storyboard has no Leads.
 
-Write each Lead as `mv/characters/<name>.js`, drawn to the Character Contract (see Characters, below). To use an example Character as-is, list it in `mv/mv.json` instead: `"characters": ["examples/clawd/clawd.js"]`; to change it, copy it into `mv/characters/`. Every Character gets a Model Sheet loop automatically:
+**Design options first.** Before building a Lead, design it two or three ways that each answer the Storyboard's Cast line, and let the person choose. Make the options differ where it shows: proportions (how many heads tall), shape language (round, square, tri), silhouette, colours, clothes. A person is data for `person()` (engine/body.js; see People, below), so write the designs in `mv/characters/<name>.js` as `personOptions('<name>', [designA, designB, designC])` and render them side by side, silhouettes and colour:
+
+```bash
+node engine/render.mjs --loop=<name>-options --sheet=1.2 --cols=1 --w=1920 --out=out/check/<name>_options.jpg
+```
+
+A creature, a robot or an object is drawn to the Character Contract with `character()` (see Characters, below); sketch its options the same way, each a small Character of its own, side by side in one loop. To use an example Character as-is, list it in `mv/mv.json` instead: `"characters": ["examples/clawd/clawd.js"]`; to change it, copy it into `mv/characters/`.
+
+🚦 **Model Sheets**, first stop: show the options sheet and ask which design to build (one option per design; the person may ask for a mix).
+
+Then build the chosen one: `const <name> = person(chosenDesign)`, with any emotions the Storyboard needs that the defaults don't have. Every Character gets a Model Sheet loop, and a person a check sheet too: the key views and three strong poses as silhouettes, then the scale ladder, the person as big as they'll be in a wide, a medium and a close-up Shot (any Character can register one with `checkSheet()`):
 
 ```bash
 node engine/render.mjs --loop=<name>-sheet --sheet=0.3,1.05,2.6 --cols=1 --w=1600 --out=out/check/<name>_sheet.jpg
+node engine/render.mjs --loop=<name>-check --sheet=1.2 --cols=1 --w=1920 --out=out/check/<name>_check.jpg
 ```
 
-Look at the sheet yourself first: every view on model, every emotion readable at a glance and different from the others (by face, or by body and colour for a Character without one), the turn steps through the views, the emotion changes act (squint, take, settle).
+Look at both yourself first: every view on model, every emotion readable at a glance and different from the others (by face, or by body and colour for a Character without one), the turn steps through the views, the emotion changes act (squint, take, settle); every silhouette reads as its pose; the wide size still reads as this Character, and the close-up has the detail a face that carries the story needs.
 
-🚦 **Model Sheets.** Show the person each Lead's sheet. Guests don't need this Gate: the Chapter that introduces a Guest designs it.
+🚦 **Model Sheets**, second stop: show the person each Lead's model sheet and check sheet. Guests don't need this Gate: the Chapter that introduces a Guest designs it.
 
 ### 4. Shared pieces and the first Chapter
 
@@ -205,7 +216,7 @@ You know what happens because you wrote the code. The viewer doesn't: they see i
 
 - **Nothing is ever still.** Every emotion has its own idle motion, cameras drift or push, backgrounds stir, and the Style Profile's texture moves (watercolour: the linework boils). A frozen frame reads as a bug.
 - **Faces act, they never snap.** Change moods with `ch.emotions()`, which does anticipation, a squint, a take and overshoot around every change.
-- **Characters are big.** In a medium shot a Character stands about 15–20% of the frame's shorter side tall; in chorus and dance Shots the Lead fills about 40% of it. Tiny Characters are for wide establishing Shots only.
+- **Characters are big.** In a medium shot a Character stands about 15–20% of the frame's shorter side tall; in chorus and dance Shots the Lead fills about 40% of it. Tiny Characters are for wide establishing Shots only. A face that carries a moment gets a close-up: a person's face gains its detail there (lids, highlights, lips, strands), and at medium size it is only dots and lines.
 - **Everything moves on the beat.** Idles, bounces and dances all read the Beat Grid, so the whole film shares the song's pulse, drift and all.
 
 ### 6. Every Seam has a transition
@@ -278,7 +289,8 @@ Open each image with the Read tool and actually look at it. Check:
 | `engine/frame.js` | the canvas, boil, camera, lettering, render hooks, the studio |
 | `engine/geometry.js` | point lists for shapes |
 | `engine/math.js` | easing, keyframes, colour mixing, springs |
-| `engine/acting.js` | the Character Contract, the Acting Tools, dances, Model Sheets |
+| `engine/acting.js` | the Character Contract, the Acting Tools, dances, Model Sheets, check sheets, silhouettes |
+| `engine/body.js` | `person()`: whole human Characters from a design, Design Options |
 | `engine/emotes.js` | painted reaction marks |
 | `engine/timeline.js` | `chapter()`, `LOOPS`, what's drawn at time t |
 | `engine/karaoke.js`, `engine/songcheck.js` | the karaoke and the Song Check |
@@ -364,6 +376,24 @@ clawd.dancer(x, y, 24, 'bounce', t, { eyes: 'happy', mouth: 'grin', seed: 2 }); 
 - Characters that come and go mid-Shot need a stable `boilKey`.
 
 Clawd (examples/clawd/clawd.js) is a full example: 5 views, 31 emotions, hats, a lunchbox mouth, arm hooks for held props.
+
+### People
+
+`person(design)` (engine/body.js) builds a whole human Character from a design: data, not drawing code. The design sets how many heads tall (2.5 chibi … 4 cartoon … 6.5 stylised), a shape language (`round`, `square`, `tri`) for the head, body, eyes, brows and hands, the build, skin, hair (`short spiky bob long pony bun curly bald`), eyes, nose, clothes (`tee shirt hoodie jacket coat robe dress`, worn open or not; `pants shorts skirt`), shoes, and `extras(part, k)` for anything of its own (glasses, a hat, stubble), drawn at a part. The header of body.js documents every field.
+
+```js
+const mei = person({ name: 'mei', heads: 4, shape: 'round', skin: '#F0C8A8', hair: { style: 'bob', color: '#2B2233' },
+                     top: { kind: 'tee', color: '#E07A55' }, bottom: { kind: 'pants', color: '#33418A' } });
+mei(x, groundY, 24, { ...mei.feel('happy', t), view: 'q' });
+mei(x, groundY, 24, { ...mei.feel('determined', t), crouch: .4, lean: .15, aR: .3, eR: .2, hR: 'point' });
+```
+
+- **A skeleton that bends.** The spine is a curve (`lean`, `arc`: the line of action), the hips and shoulders tilt against each other (`hipTilt`), elbows bend (`eL`, `eR`), and the knees find themselves: the feet stay planted while the body crouches (`crouch`), sits (`sit`) or walks (`walk`, from `ch.stroll()`); `lL`/`kL` lift a leg by hand. Hands make shapes (`hL`, `hR`: open, relaxed, point, fist, thumb, grip, flat, cup, peace); `hug` and `cross` fold the arms.
+- **Five key views** (`front`, `q`, `side`, `qback`, `back`), with the near arm and leg in front in the turned ones.
+- **Detail by size.** A head under about 34 px on screen is dots and lines; mid size adds eye whites, irises, brows, a nose and ears; over about 95 px, lids, lashes, highlights, lips and teeth, hair strands and cloth folds.
+- **Sixteen emotions** to start from (neutral happy laugh excited sad cry angry surprised scared shy determined thinking sleepy love smug confused), each idling on the beat; `emotions: { … }` in the design adds or replaces them.
+- **Singing**: `sing: singOpen(t, [lineIndices])` opens the mouth on every sung word (performance mode).
+- `drawHand(x, y, size, { shape, rot, flip })` draws a hand on its own (a hand holding a prop in an insert Shot); `silhouette(colour, fn)` flattens whatever fn paints.
 
 ## Common failures
 

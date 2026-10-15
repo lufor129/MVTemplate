@@ -11,7 +11,7 @@ One music video, made from one copy of this template, driven by one Song. A vide
 _Avoid_: project, clip, film
 
 **Gate**:
-A point where making the MV stops until the person approves what is there. There are five: the Song Check, the Storyboard, the Leads' Model Sheets (skipped when the MV has no Leads), the first Chapter and the Rough Cut, plus a Style Sample first when the MV needs a new Style Profile.
+A point where making the MV stops until the person approves what is there. There are five: the Song Check, the Storyboard, the Leads' Model Sheets (choosing among the Design Options, then approving the built Leads; skipped when the MV has no Leads), the first Chapter and the Rough Cut, plus a Style Sample first when the MV needs a new Style Profile.
 _Avoid_: checkpoint, review step, milestone
 
 **Brief**:
@@ -101,6 +101,18 @@ _Avoid_: extra, cameo, monster
 **Model Sheet**:
 A render of one Character's key views, every emotion and a turn, used to approve the Character before it acts.
 _Avoid_: character sheet, turnaround
+
+**Person**:
+A human Character built by `person()` from a design: proportions, shape language, colours, hair, clothes and face, on a skeleton that bends, with detail that grows with its size on screen.
+_Avoid_: humanoid, rig, avatar
+
+**Design Options**:
+Two or three designs for one Lead, shown side by side as silhouettes and in colour, so the person chooses one before it is built.
+_Avoid_: concepts, variants, drafts
+
+**Check Sheet**:
+A render of one Character's silhouettes and its scale ladder (as big as it will be in a wide, a medium and a close-up Shot), to check that it reads at every size.
+_Avoid_: test sheet, size chart
 
 **Character Contract**:
 What a Character must provide so the Acting Tools can drive it: its key views, its emotion table and a way to draw it in a pose.

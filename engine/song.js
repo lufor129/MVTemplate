@@ -12,6 +12,8 @@
 //   beatsAfter(t, n)                           n beats after the beat nearest t.
 //   lineAt(t)  the Lyric Line being sung at t: { i, line, k } (k = 0..1 through it), or null.
 //   sectionAt(t)                               the Section at t: { i, section, k }.
+//   singOpen(t, lines)                         0..1: how open a singer's mouth is, from the word times of the given
+//                                              Lyric Lines (an array of indices, or a test on the index).
 const DUR = SONG.duration;
 const BEATS = SONG.beats, BARS = SONG.downbeats.length > 1 ? SONG.downbeats : SONG.beats.filter((b, i) => i % 4 === 0);
 const LINES = SONG.lines, SECTIONS = SONG.sections;
@@ -58,6 +60,19 @@ function lineAt(t) {
     if (t >= L.start && t < L.end) return { i, line: L, k: (t - L.start) / (L.end - L.start) };
   }
   return null;
+}
+// Open on every sung word (CJK: character), wider on long held ones, shut between lines.
+function singOpen(t, sel = () => true) {
+  const ok = typeof sel === 'function' ? sel : i => sel.includes(i);
+  for (let i = 0; i < LINES.length; i++) {
+    const l = LINES[i];
+    if (t < l.start - .02 || t > l.end + .08 || !ok(i)) continue;
+    for (const [a, b] of l.tokens || []) {
+      if (t >= a && t < b) { const u = (t - a) / Math.max(.05, b - a), held = clamp((b - a - .35) / .6); return .3 + .7 * Math.max(Math.sin(Math.PI * Math.min(u * 1.6, 1)), held); }
+    }
+    return t > l.end ? .3 * (1 - seg(t, l.end, l.end + .08)) : .25;
+  }
+  return 0;
 }
 function sectionAt(t) {
   for (let i = 0; i < SECTIONS.length; i++) {

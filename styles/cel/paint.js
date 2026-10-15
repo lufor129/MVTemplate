@@ -2,7 +2,14 @@
 // and variable-width ink lines that boil, on animation paper. See STYLE.md for the rules of the look.
 
 const INK_W = 5.6;   // stroke width in frame units per unit of `sw`: a bold line, the cel's signature
-const SHADE = '#3B2E6E';   // where shadow tones lean: cool, toward violet
+// A shadow tone the way a cel painter mixes one: darker, a little richer, its hue nudged toward red-violet (skin goes
+// rosy, not grey); a lit edge goes toward warm white.
+const _shaded = new Map();
+function shadeCol(c) {
+  let v = _shaded.get(c);
+  if (!v) { const [h, s, l] = hexHsl(c), d = ((.93 - h + 1.5) % 1) - .5; v = hslHex((h + d * .1 + 1) % 1, Math.min(1, s * 1.02 + .03), l * .8); _shaded.set(c, v); }
+  return v;
+}
 
 // Cel paint is clean and saturated: every colour that reaches paint() is pushed that way, Characters' own included.
 const _toned = new Map();
@@ -16,15 +23,15 @@ function tone(c) {
 // One hard-edged flat tone, like a cel painter's shadow line, on the side away from LIGHT (frame.js); big shapes also
 // get a thin lit edge on the other side. Skips shapes too small to shade and backdrops (sky, ground, wipes): anything
 // wider than 60% of the frame.
-function _shade(P, col, a) {
+function _shade(P, col, a, k = 1) {
   const [x0, y0, x1, y1] = _bounds(P), m = Math.min(x1 - x0, y1 - y0), M = Math.max(x1 - x0, y1 - y0);
   if (m < 14 || M > Math.max(W, H) * .6 || hexHsl(col)[2] < .22) return;
   const side = (d, c, k) => {
     // p5 sends our triangles after endClip(), so the mask would also land on the frame: draw it all but transparent
     push(); beginClip({ invert: true }); _fillPoly(P.map(([x, y]) => [x - LIGHT[0] * d, y - LIGHT[1] * d]), '#000000', .002); endClip();
-    _fillPoly(P, mixCol(col, c, k), a); pop();
+    _fillPoly(P, c ? mixCol(col, c, k) : shadeCol(col), a); pop();
   };
-  side(Math.min(120, m * .34), SHADE, .42);
+  side(Math.min(120, m * .34 * k), null, 0);
   if (m > 60 && hexHsl(col)[2] > .35) side(-Math.min(30, m * .07), '#FFF8E8', .5);   // not on dark silhouettes
 }
 // Brushes: width, opacity, and how broken the line is (0 = solid). Names match the watercolour profile, so Characters
@@ -44,7 +51,8 @@ function _ink(P, sw, col, br, closed) {
 }
 
 // ---------- paint ----------
-// One call = one shape: an optional flat colour (wash) with its shadow side found by itself (o.shade: false skips it),
+// One call = one shape: an optional flat colour (wash) with its shadow side found by itself (o.shade: false skips it;
+// a number scales how far the shadow reaches),
 // a flat tone over it (fill: shading, light, cast shadows), optional hatching, and an ink outline unless ink is null.
 function paint(pts, o = {}) {
   if (!pts || pts.length < 2) return;
@@ -52,7 +60,7 @@ function paint(pts, o = {}) {
   if (o.wash) {   // printed a little off the line, like hand colouring
     const dx = 1.6 + jit(.6), dy = 1.2 + jit(.6), Q = P.map(([x, y]) => [x + dx, y + dy]), col = tone(o.wash), a = (o.washOp ?? 255) / 255;
     _fillPoly(Q, col, a);
-    if (a > .9 && o.shade !== false) _shade(Q, col, a);
+    if (a > .9 && o.shade !== false) _shade(Q, col, a, typeof o.shade === 'number' ? o.shade : 1);
   }
   if (o.fill) _fillPoly(P, tone(o.fill), Math.min(.85, (o.fillOp ?? 170) / 255 * .8));
   if (o.hatch) {

@@ -11,7 +11,7 @@ What makes it read as cel at a glance. The Style Sample Gate checks these.
 
 - **Bold** ink lines that **boil**: redrawn slightly differently 12 times a second, thick and thin like a pressed brush.
 - **Saturated flat colour** in every shape, printed a couple of pixels off its line, like hand colouring.
-- **A hard shadow side on every solid shape**, found from the light, cool and flat, never a gradient; big shapes get a thin lit edge too.
+- **A hard shadow side on every solid shape**, found from the light: one flat tone, darker and nudged toward red-violet (skin goes rosy, not grey), never a gradient; big shapes get a thin lit edge too.
 - **Broad acting**: squash, stretch and smears pushed further than the Character asks (`STYLE.pose`).
 - **On twos**: every drawing holds two frames (style.json sets `hold: 2`), so motion has a hand-made snap.
 - The karaoke as **rounded subtitle letters** with a thick ink edge, no band.
@@ -46,7 +46,7 @@ GUIDE.md's review loop sends you here. In every sheet and strip, look for:
 | option | meaning |
 |---|---|
 | `wash, washOp` | flat colour (opacity 0–255), a little off-register, with its shadow side (and, on big shapes, a lit edge) found from `LIGHT` |
-| `shade` | `false`: no shadow side on this shape |
+| `shade` | `false`: no shadow side on this shape; a number (0–1) narrows it (a face: about .45) |
 | `fill, fillOp` | a flat tone over it, hard-edged: shade, light, cast shadow. `bleed`, `tex` and `border` are ignored |
 | `hatch: { d, a, o: { rand }, b, c, w }` | hatching lines (spacing, angle, randomness, brush, colour, weight) |
 | `ink, sw, br` | outline colour (default `PAL.ink`), weight (~.4–2), brush. **`ink: null` means no outline.** |

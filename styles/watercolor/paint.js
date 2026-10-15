@@ -22,19 +22,34 @@ function tone(c) {
   return v;
 }
 const _lined = new Map();
-function lineCol(c) { let v = _lined.get(c); if (!v) { v = mixCol(c, SEPIA, .6); _lined.set(c, v); } return v; }
+// dark lines go sepia; a coloured stroke (a trim, a highlight) keeps its colour, toned like a wash
+function lineCol(c) { let v = _lined.get(c); if (!v) { v = hexHsl(c)[2] < .35 ? mixCol(c, SEPIA, .6) : tone(c); _lined.set(c, v); } return v; }
 
-function paint(pts, o = {}) { centred(pts, (P) => paintAt(P, o)); }
+// Smooth a closed point list through its points (Catmull-Rom), k = 0 (as given) .. 1 (fully smooth). p5.brush's own
+// curved shapes (beginShape(curvature)) sometimes leave the wash out and keep only the outline, so curves are smoothed
+// here and painted as a plain polygon, which always fills.
+function smoothPts(P, k, n = 5) {
+  if (!k || P.length < 3) return P;
+  const N = P.length, at = i => P[(i + N) % N], out = [];
+  for (let i = 0; i < N; i++) {
+    const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    for (let s = 0; s < n; s++) {
+      const u = s / n, u2 = u * u, u3 = u2 * u;
+      out.push([0, 1].map(d => lerp(lerp(p1[d], p2[d], u), .5 * (2 * p1[d] + (p2[d] - p0[d]) * u + (2 * p0[d] - 5 * p1[d] + 4 * p2[d] - p3[d]) * u2 + (3 * p1[d] - p0[d] - 3 * p2[d] + p3[d]) * u3), k)));
+    }
+  }
+  return out;
+}
+function paint(pts, o = {}) { centred(pts, (P) => paintAt(o.curv ? smoothPts(P, o.curv) : P, o)); }
 function paintAt(pts, o) {
   if (o.wash || o.fill || o.hatch) {
     if (o.wash) brush.wash(tone(o.wash), o.washOp ?? 255); else brush.noWash();
     if (o.fill) { brush.fill(tone(o.fill), o.fillOp ?? 170); brush.fillBleed(o.bleed ?? .1); brush.fillTexture(o.tex ?? .4, o.border ?? .35); } else brush.noFill();
     if (o.hatch) { brush.hatch(o.hatch.d, o.hatch.a, o.hatch.o || { rand: .15 }); brush.hatchStyle(o.hatch.b || 'HB', lineCol(o.hatch.c || PAL.ink), o.hatch.w || 1); } else brush.noHatch();
     brush.noStroke();
-    if (o.curv) { brush.beginShape(o.curv); for (const p of pts) brush.vertex(p[0], p[1]); brush.endShape(true); }
-    else brush.polygon(pts);
+    brush.polygon(pts);
   }
-  if (o.ink !== null) lostEdges(pts, o.curv || 0, (o.sw ?? 1) * LINE_W, lineCol(o.ink || PAL.ink), o.br || 'ink');
+  if (o.ink !== null) lostEdges(pts, 0, (o.sw ?? 1) * LINE_W, lineCol(o.ink || PAL.ink), o.br || 'ink');
 }
 function inkLine(pts, sw = 1, col = PAL.ink, br = 'ink', curv = .5) {
   centred(pts, (P) => { brush.noFill(); brush.noWash(); brush.noHatch(); brush.set(br, lineCol(col), sw * LINE_W); brush.spline(P, curv); });
@@ -55,7 +70,7 @@ function lostEdges(pts, curv, sw, col, br) {
   if (lit.every(v => v)) return;
   const s0 = lit.findIndex(v => v);   // walk round once from a lit point, so every run starts and ends at a gap
   let run = [];
-  const end = () => { if (run.length > 2) brush.spline(run, .5); run = []; };
+  const end = () => { if (run.length > Math.max(2, n * .08)) brush.spline(run, .5); run = []; };   // a scrap of line left between two gaps reads as a smudge: leave it out
   for (let k = 1; k <= n; k++) { const i = (s0 + k) % n; if (lit[i]) end(); else run.push(S[i]); }
   end();
 }
@@ -126,7 +141,7 @@ void main() {
   for (int i = 0; i < 8; i++) { float a = float(i) * .785; b += texture2D(tex0, uv + vec2(cos(a), sin(a)) * 3.5 * rs * texelSize).rgb; }
   b /= 8.;
   float edge = clamp(length(c - b) * 3., 0., 1.);
-  float d = 1. + (fbm(fp * .005) - .5) * .55 + (n(fp * .7) - .5) * .22 + edge * .7;
+  float d = 1. + (fbm(fp * .005) - .5) * .55 + (n(fp * .7) - .5) * .22 + edge * .45;
   gl_FragColor = vec4(clamp(c - (c - c * c) * (d - 1.), 0., 1.), 1.);
 }`;
 let pigmentSh = null;
@@ -145,7 +160,9 @@ const STYLE = {
     brush.add('dry', { type: 'default', weight: 14, scatter: 3, sharpness: .3, grain: 6, opacity: 90, spacing: .6, pressure: [1, .6], rotate: 'natural', noise: .4 });
     paperG = makePaper(); grainC = makeGrain(); glowTex = makeGlowTex();
   },
-  underlay() { image(paperG, 0, 0, W, H); },
+  // p5.brush loses the wash pending when a frame's first stroke is drawn, so every frame starts with a stroke of its
+  // own, off-canvas, and lands it
+  underlay() { image(paperG, 0, 0, W, H); brush.noWash(); brush.noFill(); brush.noHatch(); brush.set('inkfine', PAL.ink, .1); brush.line(-80, -80, -60, -60); flushBrush(); },
   overlay(c, w, h) { c.globalCompositeOperation = 'multiply'; c.drawImage(grainC, 0, 0, w, h); c.globalCompositeOperation = 'source-over'; },
   flush: flushBrush,
   letterFont: size => `${size}px "Permanent Marker", "LXGW WenKai TC", "Klee One", cursive`,

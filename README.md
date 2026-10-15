@@ -11,7 +11,7 @@ Both the song and `lyric.txt` are required. Claude first asks a few questions (t
 | Style Sample | `out/check/style_sample.jpg`, only when you asked for a new style | the look |
 | Song Check | `out/check/songcheck.mp4`: the song with beat clicks, sections and karaoke | the timing is right |
 | Storyboard | `mv/STORYBOARD.md` | the idea, the shots, the open questions |
-| Model Sheets | each lead character's views and emotions (skipped when there are none) | the characters |
+| Model Sheets | two or three design options for each lead to choose from, then the chosen one's views, emotions, silhouettes and sizes (skipped when there are none) | the characters |
 | First Chapter | a clip of the first chapter | the look and the pace |
 | Rough Cut | `out/rough/rough.mp4`, half size, 12 fps | the whole thing against the song |
 
@@ -54,4 +54,5 @@ Every render command takes `--mv=<folder>` for an MV kept elsewhere.
 | [styles/](styles/) | Style Profiles: how paint lands on the frame. [watercolor/](styles/watercolor/STYLE.md), [cel/](styles/cel/STYLE.md), [cutout/](styles/cutout/STYLE.md), [pixel/](styles/pixel/STYLE.md) |
 | [tools/song/](tools/song/) | The song analysis |
 | [examples/clawd/](examples/clawd/) | Clawd, an example character with 31 emotions |
+| [examples/people/](examples/people/) | three example people made with `person()`, as Design Options |
 | `studio.html` | Scrub or play an MV in Chrome |
