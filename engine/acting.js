@@ -164,35 +164,6 @@ function move(style, t, seed = 0, spin = a => ({})) {
   return o;
 }
 
-// ---------- checks ----------
-// silhouette(colour, fn): runs fn with every solid shape it paints flattened to one colour, to check that a pose
-// reads without its insides. Lines, shading (a fill with no wash) and light are left out.
-function silhouette(col, fn) {
-  const P = paint, L = inkLine, G = glow;
-  paint = (pts, o = {}) => { if (o.wash) P(pts, { wash: col, ink: null, curv: o.curv, shade: false }); };
-  inkLine = () => {};
-  glow = () => {};
-  try { fn(); } finally { paint = P; inkLine = L; glow = G; }
-}
-// The check sheet (<name>-check, made by person() for every person; any Character can register one): the key views
-// and three strong poses as silhouettes, then the scale ladder: the Character as big as it will be in a wide, a medium
-// and a close-up Shot, so you see what reads at each size.
-function checkSheet(ch) {
-  return t => {
-    const S = ch.spec, [sw, sh] = S.size, names = Object.keys(S.emotions), label = (s, x, y) => letter(s, x, y, 20, PAL.ink, { ink: false, alpha: .8 });
-    const acts = ['excited', 'angry', 'scared', 'surprised', 'sad'].filter(n => S.emotions[n]).slice(0, 3);
-    while (acts.length < 3 && names[acts.length + 1]) acts.push(names[acts.length + 1]);
-    const q = S.views[Math.min(1, S.views.length - 1)], items = S.views.map(v => [v, 'neutral', v]).concat(acts.map(e => [q, e, e]));
-    const cw = W / items.length, u1 = Math.min(cw * .62 / sw, H * .3 / sh), y1 = H * .38;
-    silhouette(PAL.ink, () => items.forEach(([v, e], i) => ch(cw * (i + .5), y1, u1, { ...ch.feel(e, t), view: v, emote: null, noShadow: true, boilKey: 'sil' + i })));
-    items.forEach(([, , name], i) => label(name, cw * (i + .5), y1 + 30));
-    const e = acts[0] || 'neutral', y2 = H * .93, uc = H * .5 / (sh * .45);
-    ch(W * .78, H * .47 + sh * uc, uc, { ...ch.feel(e, t), view: q, emote: null, boilKey: 'close' });
-    [['wide', .12, .1], ['medium', .3, .34]].forEach(([name, k, x], i) => { ch(W * x, y2, H * k / sh, { ...ch.feel(e, t), view: q, boilKey: 'lad' + i }); label(name, W * x, y2 + 28); });
-    label('close-up', W * .62, H * .5);
-  };
-}
-
 // ---------- the Model Sheet ----------
 // Every Character gets one, for the Model Sheet Gate: its key views, a turn, a jump, a run of acted emotion changes,
 // and every emotion alive. Labels are fine here: it's reference, not part of the MV.

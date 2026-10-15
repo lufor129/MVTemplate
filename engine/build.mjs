@@ -27,7 +27,7 @@ const DEFAULTS = {
   characters: [],          // Character files from elsewhere in the template, e.g. "examples/clawd/clawd.js"
   bpm: 120, duration: 10,  // only used when there is no song.json
 };
-const ENGINE = ['math.js', 'song.js', 'frame.js', 'geometry.js', 'acting.js', 'emotes.js', 'body.js', 'timeline.js', 'karaoke.js', 'songcheck.js', 'stylesample.js'];
+const ENGINE = ['math.js', 'song.js', 'frame.js', 'geometry.js', 'acting.js', 'emotes.js', 'timeline.js', 'karaoke.js', 'songcheck.js', 'stylesample.js'];
 
 const readJSON = p => JSON.parse(readFileSync(p, 'utf8'));
 const jsIn = d => existsSync(d) ? readdirSync(d).filter(f => f.endsWith('.js')).sort().map(f => join(d, f)) : [];
