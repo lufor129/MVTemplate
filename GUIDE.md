@@ -10,17 +10,18 @@ The person decides **what** the MV is about, and may say no more than one senten
 
 ---
 
-## The three goals
+## The four goals
 
 - **Handmade.** It should look made by hand, frame by frame, in the Style Profile's medium (watercolour by default), keeping every rule its STYLE.md sets, with no lettering beyond what the Storyboard lists.
 - **Alive.** Something is always moving and something is always happening. Faces act instead of snapping, and Characters are big enough to feel.
-- **One piece.** It's one film cut to one song, not a pile of clips. Plan it before you draw it, and link every Shot to the next.
+- **Refined.** Every frame should hold up as a still. Spend detail where the viewer's eye lands and where the camera is close: a face in close-up, the prop the line is about, the ground under the feet. Leave the rest simple on purpose. What counts as detail depends on the Shot, the style and the song: decide it each time.
+- **One piece.** It's one film cut to one song, not a pile of clips. Plan it before you draw it, and link every Shot to the next. The viewer must always know where they are and who is where. Each Shot continues what the last one left in their eye: the place, the direction, the light, the state of things.
 
-Underneath all three, the viewer has to be able to follow it, at full speed, the first time. Timing (rule 4) is the rule models get wrong most often.
+Underneath all four, the viewer has to be able to follow it, at full speed, the first time. Timing (rule 4) is the rule models get wrong most often.
 
 ## The workflow
 
-An MV is one copy of this template. The person puts `song.mp3` (any audio format named `song.*`) and `lyric.txt` (or `lyrics.txt`) in `song/`, and gives you a sentence. Both files are required: the template makes MVs for sung songs, and the Lyric Sheet drives the timing, the Sections and the Shots. If either is missing, ask for it before anything else. You then go through these steps in order. At each 🚦 **Gate**, stop: show the person what's there, say what you need from them, and wait for their approval before going on. Changes they ask for at a Gate are made before you pass it.
+An MV is one copy of this template. The person puts `song.mp3` (any audio format named `song.*`) and `lyric.txt` (or `lyrics.txt`) in `song/`, and gives you a sentence; `song/translation.txt` is optional (see the Brief). Both of the first two are required: the template makes MVs for sung songs, and the Lyric Sheet drives the timing, the Sections and the Shots. If either is missing, ask for it before anything else. You then go through these steps in order. At each 🚦 **Gate**, stop: show the person what's there, say what you need from them, and wait for their approval before going on. Changes they ask for at a Gate are made before you pass it.
 
 | # | step | makes | Gate |
 |---|---|---|---|
@@ -32,6 +33,8 @@ An MV is one copy of this template. The person puts `song.mp3` (any audio format
 | 5 | The other Chapters, in parallel | `mv/chapters/*.js` | — |
 | 6 | The Rough Cut | `out/rough/rough.mp4` | 🚦 Rough Cut |
 | 7 | The final render | `out/final/<title>.mp4` | — |
+| 8 | Publish (when the person wants to post it) | `out/shorts/*_9x16.mp4`, `out/publish/description.txt` | — |
+| 9 | Harvest: what this MV taught, back into the template | a branch of the template | each item is the person's call |
 
 ### 0. The Brief
 
@@ -47,7 +50,7 @@ The sentence says what the MV is about; settle what it leaves open before anythi
   | lyric | the sung words, painted into the picture | words arrive, act out what they say, and leave |
 
 - **Format**: 16:9 or 9:16.
-- **Karaoke**: on or off (usually off in lyric mode, where the words are already in the picture).
+- **Karaoke**: on or off (usually off in lyric mode, where the words are already in the picture). With it on, a translation can sit on a row above the sung words: `song/translation.txt`, one translated line per Lyric Line, in order (`[Section]` marks and blank lines are skipped; the build stops if the counts differ). Ask whether they want one, and write it (or take theirs) before the Song Check.
 - **Style**: always ask, even while `styles/` holds only one. Offer each existing Style Profile (its `style.json` `description`), the one that fits the sentence best first; the person may also describe a look that isn't there yet (cut paper, pixel art, pastel, ink line…).
 
 Also ask whether they have references (a character to reuse, photos, colours, an MV they love). Put any files in `mv/refs/` and look at them. Write the answers into `mv/mv.json` (`title`, `mode`, `format`, `karaoke`, `style`).
@@ -74,7 +77,9 @@ node engine/render.mjs --songcheck                                 # → out/che
 
 The analysis separates the vocals, places each line with Whisper, re-times it by forced alignment, finds every beat and bar start (the Beat Grid, ADR 0002), and makes the Sections, adding Intro / Interlude / Outro for unsung stretches. It prints every line with a confidence; below 0.5 means the two timing methods disagreed.
 
-🚦 **Song Check.** Give the person `out/check/songcheck.mp4`: the song with a click on every beat (higher on bar starts), the Section name, a disc that flashes on each beat, a strip of lines and beats, and the karaoke lighting up word by word. Low-confidence lines show in red. Ask them to check that the clicks sit on the beat, the words light up as they're sung, the Sections change where the song does, and the tempo feels right (a beat tracker can lock onto half, double or 1.5× the felt tempo). Fix what they report by editing `song/song.json` by hand (a line's `start`, `end` and `tokens`; a Section's `start`/`end`; or the beat lists), then render the Song Check again. Don't re-run the analysis after hand edits: it would overwrite them.
+On a sung vocal (a generated one above all) Whisper can skip a whole stretch, or hear words nobody sings ("see you next time"), and a prompt doesn't fix it. So wherever lyric lines fail to match, the analysis hears that stretch again in chunks of at most 8 s and keeps the first try in `song/.analysis/asr.orig.json` (`--no-rescue` skips this). The beat tracker, for its part, can put a bar start in a stop-time break or on a pickup: the analysis lists every bar without the usual number of beats, and the Song Check draws those in red.
+
+🚦 **Song Check.** Give the person `out/check/songcheck.mp4`: the song with a click on every beat (higher on bar starts), the Section name, a disc that flashes on each beat, a strip of lines and beats, and the karaoke lighting up word by word. Low-confidence lines show in red. Ask them to check that the clicks sit on the beat, the high click on each bar start (listen hardest at the red bars), the words light up as they're sung, the Sections change where the song does, and the tempo feels right (a beat tracker can lock onto half, double or 1.5× the felt tempo). Fix what they report by editing `song/song.json` by hand (a line's `start`, `end` and `tokens`; a Section's `start`/`end`; or the beat lists), then render the Song Check again. Don't re-run the analysis after hand edits: it would overwrite them.
 
 ### 2. Lyric Reading, then the Storyboard
 
@@ -109,6 +114,8 @@ Structure:
 - Repeated Sections (choruses) should rhyme: the same setting or motif, escalating each time.
 - Times come from `song.json`: Shot starts on line starts or beats, big changes on bar starts.
 
+As you write each Shot, think what it needs to look refined, and how it continues the one before.
+
 Check it against the rules: an event in every Shot? Every read has time to land? A transition at every Seam? Any lettering beyond what it lists (Sound Words, and painted lines in lyric mode)? Does the ending rhyme with the opening?
 
 🚦 **Storyboard.** Show the person the Storyboard (and the Open questions). Revise it until they approve.
@@ -137,7 +144,7 @@ Build what several Chapters share (the palette in mv.json, recurring props, sets
 
 For a short MV, build the remaining Chapters yourself, in order. For a long one, use subagents, at most three at a time (each one renders in its own headless Chrome). Start a new one whenever one finishes.
 
-Before the first one starts, move anything two Chapters will both draw (a troupe of background dancers, a set the choruses return to) into `mv/characters/`. Each subagent gets the common brief, [docs/chapter-brief.md](docs/chapter-brief.md) (what to read, the API, the rules, the review budget, what to report), plus its own:
+Before the first one starts, move anything two Chapters will both draw (a troupe of background dancers, a set the choruses return to) into `mv/characters/`, and the transitions too: a Seam two Chapters share is drawn by one helper there (a whip smear, swinging doors, a cloud of steam, in the MV's own world), so both sides draw the same thing. Each subagent gets the common brief, [docs/chapter-brief.md](docs/chapter-brief.md) (what to read, the API, the rules, the review budget, what to report), plus its own:
 
 - **its Chapter:** the file name, `chapter('<name>', start, end, …)` with the Section names, the Shots it takes from the Storyboard, its Sound Words, its Guests;
 - **a contract for each Seam it shares.** Neighbours are built at the same time and can't look at each other, so write down the exact frame where they meet, the same text in both briefs. Examples that worked:
@@ -145,9 +152,19 @@ Before the first one starts, move anything two Chapters will both draw (a troupe
   - a full-frame colour: "at the edge the whole frame is `flash(1, '#F4B6C2')` with a white highlight arc upper left"; the later Chapter starts on it and breaks it;
   - a camera state: "rolled +0.35 rad and solid red at the edge"; "zoom z = 1 − .06·k², ending at .94";
   - a held tableau: the earlier Chapter writes the exact positions, scales and camera formula in a comment block `SEAM OUT TO CHAPTER n` at the top of its file, and the later one, started after it, copies them.
+
+  On twos (`"hold": 2`) the last drawing a Chapter shows is at its end − 1/12 s (end − hold/fps), and the next Chapter's first drawing can come a little after its start. A contract that meets on a full cover (a flash, a solid wipe, black) must be reached by the earlier Chapter's last drawing and still be there at the later one's first; say so in both briefs.
 - **Guests:** a Guest a later Chapter brings back (a curtain call, a callback) goes on `CAST` as `CAST.<name> = (x, y, s, t, o) => …`, standing on (x, y), with `s` on the Lead's size scale. Its subagent reports the signature and options. A Chapter that uses several Guests starts after the Chapters that define them.
 
-When they're done, check every Seam between Chapters yourself: one sheet with frames at −0.4, −0.15, −0.04, +0.04, +0.15, +0.4 s around each Chapter edge shows them all at once. Fix what doesn't join.
+A subagent that stops at the usage limit keeps what it has written: when the limit resets, send it a message (SendMessage, by its name) to carry on, rather than starting a new one.
+
+When they're done, check every Seam between Chapters yourself, as the final will show it:
+
+```bash
+node engine/render.mjs --seams     # → out/check/seams.jpg: each Chapter edge, the drawings the viewer sees on either side
+```
+
+It flags (⚠) a full cover no frame shows (the earlier Chapter reaches it after its last drawing, or the later one has left it by its first) and (•) a jump across the edge much bigger than the motion around it, which is fine only where the Storyboard asks for a cut, a flash or a smash. Fix what doesn't join.
 
 ### 6. The Rough Cut
 
@@ -155,7 +172,7 @@ When they're done, check every Seam between Chapters yourself: one sheet with fr
 node engine/render.mjs --rough       # half size, 12 fps, with the song → out/rough/rough.mp4 (resumable)
 ```
 
-Watch the rhythm against the song: does each line's picture land on its line, do the hits land on beats, is there any dead stretch?
+`--rough` runs the Seam check too when its frames are done: read its report before you watch. Then watch the rhythm against the song: does each line's picture land on its line, do the hits land on beats, is there any dead stretch?
 
 🚦 **Rough Cut.** Give the person `out/rough/rough.mp4`. Make the changes they ask for, then render the final.
 
@@ -166,6 +183,31 @@ node engine/render.mjs --final --workers=3     # full size, mv.json fps, with th
 ```
 
 `--rough` and `--final` keep frames already on disk. After changing a Chapter, delete its frames (or the whole `frames/` folder) so they're rendered again.
+
+### 8. Publish
+
+When the person wants to post the MV, ask which of these they need:
+
+- **A vertical short** (Reels, Threads, TikTok, Shorts). Choose a stretch with them that stands on its own (the opening, a chorus, the ending), then:
+
+  ```bash
+  python3 tools/shorts/make_short.py --mv=<dir> --from=2 --to=34.5 --name=open --title="BIG LINE|smaller line"
+  ```
+
+  A 16:9 MV becomes its picture in the middle of a 9:16 frame over a blurred copy of itself, the title above and the lyric below in the Style Profile's fonts and colours, each word lighting up as it is sung → `out/shorts/<name>_9x16.mp4`. A 9:16 MV is cut as it is.
+- **The YouTube description**: the chapters from the Storyboard, the lyrics and the translation, within YouTube's rules (chapters from 0:00, each at least 10 s; no angle brackets; at most 5000 characters, past which the translation moves to a pinned comment):
+
+  ```bash
+  python3 tools/publish/description.py --mv=<dir> --intro=intro.txt --about=about.txt --tags="#MusicVideo"
+  ```
+
+  The opening (`--intro`) is the person's: who or what the song is for. Write it with them.
+
+Tools letter text into PIL images that ffmpeg overlays, never with ffmpeg's `drawtext`, which many ffmpeg builds don't have.
+
+### 9. Harvest
+
+An MV is a copy of the template, so what it taught stays in the copy unless someone brings it back. When the MV is done, compare the copy with the template (`diff -r` over `engine/`, `styles/`, `tools/` and `docs/`; what the Chapters and their briefs had to work around; what the person changed their mind about after seeing it) and list what could come back: engine and Style Profile changes, rules learned the hard way, tools made for this MV. Put each item to the person as its own question (bring it back as it is, generalised, or not), then make the chosen ones on a branch of the template and show them before anything is merged.
 
 ---
 
@@ -260,7 +302,8 @@ Open each image with the Read tool and actually look at it. Check:
 - **Motion:** in strips, does every move have anticipation and follow-through? Any pops or snaps? Parts moving at different times? Anything at constant speed, or mirrored left and right?
 - **Boil:** in a strip, still things change only on boil frames. Anything still that changes every frame needs its own `boilSeed()`.
 - **Contacts:** feet on the ground, held things touching the hand, thrown things leaving from it.
-- **Seams:** the first and last 0.5 s of every Shot. Does each open and close with its transition?
+- **Seams:** the first and last 0.5 s of every Shot. Does each open and close with its transition? Between Chapters, `--seams` shows the edge as the final will.
+- **Refined, and continuous:** look at each Shot as a still and next to its neighbours: is it refined where the eye goes, and does it follow on from the last Shot?
 - **Rules:** any lettering the Storyboard doesn't list? Any dead stretch?
 - **Style:** the "What to check" list in the Style Profile's STYLE.md.
 
@@ -283,11 +326,13 @@ Open each image with the Read tool and actually look at it. Check:
 | `engine/timeline.js` | `chapter()`, `LOOPS`, what's drawn at time t |
 | `engine/karaoke.js`, `engine/songcheck.js` | the karaoke and the Song Check |
 | `engine/stylesample.js` | the `style-sample` loop, for the Style Sample Gate |
-| `engine/build.mjs`, `engine/render.mjs` | gather the MV into `.build/mv.js`; render sheets, clips, the Gates' videos |
+| `engine/build.mjs`, `engine/render.mjs` | gather the MV into `.build/mv.js` (refusing top-level names the page already has); render sheets, clips, the Gates' videos, the Seam check |
+| `engine/globals.json`, `engine/globals.mjs` | the names the browser and p5 already take; refresh after a Chrome or p5 update (`node engine/globals.mjs`) |
 | `engine/lineup.mjs` | the style-sample in every Style Profile, side by side, for the Style Sample Gate |
 | `styles/<name>/` | the Style Profile: STYLE.md, its primitives, transitions, karaoke look |
 | `examples/clawd/` | Clawd, an example Character |
 | `tools/song/` | the song analysis |
+| `tools/shorts/`, `tools/publish/` | the vertical short and the YouTube description (step 8) |
 | `studio.html` | open it in Chrome to scrub or play along (`node engine/build.mjs` first; `?t=`, `?loop=`, `?songcheck`) |
 
 ### Frames are pure functions of time
@@ -295,6 +340,7 @@ Open each image with the Read tool and actually look at it. Check:
 - **Frames render in parallel and out of order.** A Shot is `fn(t, lt, dur)` and must draw the same frame for the same `t`, every time. No state carried between frames, no counters, no `Math.random()`, no physics that integrates frame by frame. Compute everything from `t`, in closed form.
 - Randomness: `hash(i)` for stable per-object values, `jit(a)`/`random()` for boil.
 - **Each Shot paints the whole frame**, background included.
+- **Top-level names.** Keep helpers inside the file's IIFE. A name an MV script declares at its top level must not be one the page already has: the browser's (`var fence = …` or `name = …` fails silently, or turns the value into a string), p5's (`line`, `text`, `map`…), or the engine's and the Style Profile's (a second `function paint` quietly replaces the first). The build refuses them.
 - **Canvas:** 1920×1080 for 16:9, 1080×1920 for 9:16 (`W`, `H`), origin top-left, y down. Compose for the MV's format.
 
 ### Chapters and Shots
@@ -339,6 +385,8 @@ Open each image with the Read tool and actually look at it. Check:
 - **Acting:** `jump(t, t0, t1, h)` → `{dy, sq}`; `take(t, t0, amt)` → `{sq, dy}`; `spring(t, t0, k, w)`; `ring(t, [t0, …])`; `arcPt(p0, p1, h, k)`; `onTwos(t)` (hold each drawing two frames).
 - **Light:** `LIGHT = [x, y]`, the way the light travels in this Shot (from the upper left by default, or mv.json `"light"`). Style Profiles that shade by themselves read it: cel puts its shadow sides away from it, watercolour loses its lines toward it.
 - **Camera:** `camBegin(cx, cy, zoom, rot)` … `camEnd()` (world point to screen centre; one level; always pair them); `toScreen(x, y)`; `shakeXY(t, amount)`.
+- **Boil:** mv.json `"boil"` is how many times a second still lines are redrawn (0: drawn once and still, cel's default; 12: a lively hand-drawn boil) and `"boilAmp"` how far their edges wander (1 = the Style Profile's own amount, .3 = gentle). Try other values for one render with `--boil=6 --boil-amp=.3`.
+- **Karaoke:** while a Chapter letters the sung line itself (a closing caption), `KARAOKE_HIDE.push([t0, t1])` hides the band. `--no-karaoke` renders the picture alone, for re-cuts that letter it their own way (the vertical short).
 - **Lettering** (Sound Words, and painted lines in lyric mode): `letter(txt, x, y, size, colour, {pop, rot, alpha, screen})`, `sfx(txt, x, y, size, colour, age)`. Composited at `flushLetters()`, after the Shot; call it yourself before a wipe that must cover them.
 - **Loops:** `LOOPS.name = t => {...}; LOOPS.name.len = 4;` makes a standalone loop (tests, GIFs, sheets), rendered with `--loop=name`.
 
@@ -362,6 +410,7 @@ clawd.dancer(x, y, 24, 'bounce', t, { eyes: 'happy', mouth: 'grin', seed: 2 }); 
 - A Character doesn't need a face. An electron, a spark or a lamp leaves out eyes and mouth; its emotions are body motion, colour and emotes, and `ch.emotions()` still acts every change.
 - Keep every Character on model in every Shot: the same shape and features throughout.
 - Characters that come and go mid-Shot need a stable `boilKey`.
+- Two optional fields keep one name across Characters, so Chapters ask for them the same way: `sit` (0..1, seated: the hips drop to a seat) and `held(u, sw)` (a prop held against the body, over it and under the hands in front). A Character that can sit or hold things takes them under these names, lists them (and its seat height) in its header, and shows a seated pose and a held prop on its Model Sheet.
 
 Clawd (examples/clawd/clawd.js) is a full example: 5 views, 31 emotions, hats, a lunchbox mouth, arm hooks for held props.
 

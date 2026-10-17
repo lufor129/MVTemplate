@@ -170,20 +170,23 @@ const STYLE = {
     size: MV.format === '9:16' ? 54 : 50,
     // a pale wash laid behind the line, ragged at the ends, growing in from the centre
     band(K) {
-      const c = outX, sz = this.size; c.font = `700 ${sz}px ${KARAOKE_FONT}`;
-      const rows = karaokeRows(c, K.text, W - 160), tw = Math.max(...rows.map(r => c.measureText(K.text.slice(r.from, r.to)).width));
-      const w = (tw + 120) * K.grow, x0 = W / 2 - w / 2, y0 = K.top + 8, hh = 88 + (rows.length - 1) * sz * 1.25;
+      const c = outX, { y: y0, h: hh, tw } = karaokeLayout(c, K, s => `700 ${s}px ${KARAOKE_FONT}`, this.size);
+      const w = (tw + 120) * K.grow, x0 = W / 2 - w / 2;
       boilSeed('karaoke');
       const pts = [[x0 + jit(8), y0 + 6 + jit(4)], [x0 + w / 2, y0 + jit(4)], [x0 + w + jit(8), y0 + 6 + jit(4)], [x0 + w + 18 + jit(8), y0 + hh / 2], [x0 + w + jit(8), y0 + hh - 6 + jit(4)], [x0 + w / 2, y0 + hh + jit(4)], [x0 + jit(8), y0 + hh - 6 + jit(4)], [x0 - 18 + jit(8), y0 + hh / 2]];
       paint(pts, { wash: PAL.cream, washOp: 230, fill: PAL.sky, fillOp: 50, bleed: .08, tex: .6, border: .7, ink: null, curv: .5 });
-      K.rows = rows;
     },
-    // sepia letters, turning rose as they are sung
+    // the translation in a paler sepia; the sung line in sepia letters, turning rose as they are sung
     text(c, K) {
-      const sz = this.size; c.font = `700 ${sz}px ${KARAOKE_FONT}`; c.textBaseline = 'middle'; c.textAlign = 'left';
-      const rows = K.rows || [{ from: 0, to: K.text.length }], y0 = K.top + 8 + 44;
-      rows.forEach((r, ri) => {
-        const s = K.text.slice(r.from, r.to), w = c.measureText(s).width, x = W / 2 - w / 2, y = y0 + ri * sz * 1.25;
+      const sz = this.size; c.textBaseline = 'middle'; c.textAlign = 'left';
+      if (K.sub) {
+        c.font = `700 ${K.subSize}px ${KARAOKE_FONT}`; c.fillStyle = mixCol(lineCol(PAL.ink), PAL.cream, .3);
+        c.fillText(K.sub, W / 2 - c.measureText(K.sub).width / 2, K.subY);
+      }
+      c.font = `700 ${sz}px ${KARAOKE_FONT}`;
+      const rows = K.rows || [{ from: 0, to: K.text.length, y: K.top + 52 }];
+      rows.forEach(r => {
+        const s = K.text.slice(r.from, r.to), w = c.measureText(s).width, x = W / 2 - w / 2, y = r.y;
         c.fillStyle = lineCol(PAL.ink); c.fillText(s, x, y);
         const n = clamp(K.sung - r.from, 0, s.length);
         if (n > 0) {

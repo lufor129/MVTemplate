@@ -16,7 +16,9 @@ const LIGHT0 = (([x, y]) => { const d = Math.hypot(x, y) || 1; return [x / d, y 
 let LIGHT = LIGHT0;
 
 // Seeded by the boil frame, so linework "boils" at BOIL fps like hand-drawn animation.
-const jit = a => (random() * 2 - 1) * a;
+// MV.boilAmp scales how far edges wander as they boil (1 = the Style Profile's own amount, .5 = half as far).
+const BOIL_AMP = MV.boilAmp ?? 1;
+const jit = a => (random() * 2 - 1) * a * BOIL_AMP;
 // Each boil drawing holds for several frames, so whatever isn't moving must draw the same until the next one. But a moving
 // thing uses a different amount of randomness each frame, which shifts the stream for everything drawn after it and makes
 // that re-boil every frame (jitter). boilSeed(key) restarts the stream from the boil frame and a key (any string or
@@ -81,7 +83,7 @@ async function setup() {
   await STYLE.setup();
   letG = createGraphics(W * RS, H * RS); letG.pixelDensity(1);
   outC = document.getElementById('out'); outC.width = W * RS; outC.height = H * RS; outX = outC.getContext('2d');
-  const sample = 'AaBb' + SONG.lines.map(l => l.text).join('');
+  const sample = 'AaBb為我畫一首小小的歌' + SONG.lines.map(l => l.text + (l.sub || '')).join('');
   await Promise.all(STYLE.fonts.map(f => document.fonts.load(`50px "${f}"`, sample).catch(() => {})));
   window.ready = true;
   if (!location.search.includes('render')) devUI();

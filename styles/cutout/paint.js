@@ -145,21 +145,24 @@ const STYLE = {
     size: MV.format === '9:16' ? 54 : 50,
     // a strip of dark paper with torn ends, sliding in from the centre
     band(K) {
-      const c = outX, sz = this.size; c.font = `900 ${sz}px ${KARAOKE_FONT}`;
-      const rows = karaokeRows(c, K.text, W - 160), tw = Math.max(...rows.map(r => c.measureText(K.text.slice(r.from, r.to)).width));
-      const w = (tw + 110) * K.grow, x0 = W / 2 - w / 2, y0 = K.top + 8, hh = 88 + (rows.length - 1) * sz * 1.25, tear = [];
+      const c = outX, { y: y0, h: hh, tw } = karaokeLayout(c, K, s => `900 ${s}px ${KARAOKE_FONT}`, this.size);
+      const w = (tw + 110) * K.grow, x0 = W / 2 - w / 2, tear = [];
       boilSeed('karaoke');
       for (let k = 0; k <= 6; k++) tear.push([x0 + w + 6 * Math.sin(k * 2.7) + jit(6), y0 + hh * k / 6]);
       for (let k = 6; k >= 0; k--) tear.push([x0 + 6 * Math.sin(k * 1.9) + jit(6), y0 + hh * k / 6]);
       paint(tear, { wash: PAL.ink, ink: null });
-      K.rows = rows;
     },
-    // cream letters, turning ochre as they are sung
+    // the translation in a duller cream; the sung line in cream letters, turning ochre as they are sung
     text(c, K) {
-      const sz = this.size; c.font = `900 ${sz}px ${KARAOKE_FONT}`; c.textBaseline = 'middle'; c.textAlign = 'left';
-      const rows = K.rows || [{ from: 0, to: K.text.length }], y0 = K.top + 8 + 44;
-      rows.forEach((r, ri) => {
-        const s = K.text.slice(r.from, r.to), w = c.measureText(s).width, x = W / 2 - w / 2, y = y0 + ri * sz * 1.25;
+      const sz = this.size; c.textBaseline = 'middle'; c.textAlign = 'left';
+      if (K.sub) {
+        c.font = `900 ${K.subSize}px ${KARAOKE_FONT}`; c.fillStyle = mixCol(PAL.cream, PAL.ink, .3);
+        c.fillText(K.sub, W / 2 - c.measureText(K.sub).width / 2, K.subY);
+      }
+      c.font = `900 ${sz}px ${KARAOKE_FONT}`;
+      const rows = K.rows || [{ from: 0, to: K.text.length, y: K.top + 52 }];
+      rows.forEach(r => {
+        const s = K.text.slice(r.from, r.to), w = c.measureText(s).width, x = W / 2 - w / 2, y = r.y;
         c.fillStyle = PAL.cream; c.fillText(s, x, y);
         const n = clamp(K.sung - r.from, 0, s.length);
         if (n > 0) {

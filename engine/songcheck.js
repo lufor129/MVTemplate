@@ -2,6 +2,12 @@
 // any storyboarding: does each Lyric Line light up as it is sung, does the flash land on the beat, are the Sections
 // where the song changes? Render it with: node engine/render.mjs --songcheck
 // It draws with the 2D canvas, not paint: it's a measuring tool, not part of the MV.
+//
+// The beat tracker can put a bar start where there isn't one (in a stop-time break, on a pickup), so every bar's beats
+// are counted: a bar with more or fewer than most have is drawn in red, for the person to listen to.
+const _barBeats = BARS.map((b, i) => BEATS.filter(x => x >= b - .03 && x < (i + 1 < BARS.length ? BARS[i + 1] : Infinity) - .03).length);
+const _usualBeats = (() => { const n = {}; for (const k of _barBeats.slice(0, -1)) n[k] = (n[k] || 0) + 1; return +Object.keys(n).sort((a, b) => n[b] - n[a])[0] || 4; })();
+const _oddBar = i => i >= 0 && i < BARS.length - 1 && _barBeats[i] !== _usualBeats;
 function songCheck(t) {
   window.OVER_TEXT = c => {
     const bp = bpOf(t), bn = Math.floor(bp), k = Math.exp(-frac(bp) * 7), br = barOf(t);
@@ -21,7 +27,8 @@ function songCheck(t) {
     c.fillStyle = onBar ? `rgba(217,119,87,${.35 + .65 * k})` : `rgba(47,60,122,${.25 + .6 * k})`;
     c.beginPath(); c.arc(cx, cy, r, 0, TAU); c.fill();
     c.fillStyle = '#FFF5E2'; c.font = `700 ${W * .03}px system-ui, sans-serif`;
-    c.fillText(`${Math.floor(br) + 1}.${((bn % 4) + 4) % 4 + 1}`, cx, cy);
+    const bi = Math.floor(br), inBar = bi >= 0 ? BEATS.filter(x => x >= BARS[bi] - .03 && x <= beatAt(bn) + .03).length : bn + 1;   // the beat, counted from its bar's start
+    c.fillText(`${bi + 1}.${inBar}`, cx, cy);
     c.fillStyle = '#2B2233'; c.font = `400 ${W * .016}px system-ui, sans-serif`;
     c.fillText(`bar.beat   ·   ${t.toFixed(2)} s   ·   ${SONG.bpm} bpm`, cx, cy + W * .095);
     // a strip from t-3 to t+6 s: beats, bars, lines (red = low confidence, check it), the playhead
@@ -29,7 +36,8 @@ function songCheck(t) {
     c.strokeStyle = '#2B2233';
     for (let n = Math.floor(bpOf(t - 3)); n <= bpOf(t + 6) + 1; n++) {
       const bt = beatAt(n), x = sx(bt); if (x < x0 || x > x1) continue;
-      const isBar = BARS.some(d => Math.abs(d - bt) < .03);
+      const bar = BARS.findIndex(d => Math.abs(d - bt) < .03), isBar = bar >= 0;
+      c.strokeStyle = isBar && _oddBar(bar) ? '#D8394E' : '#2B2233';
       c.lineWidth = isBar ? 3 : 1.2; c.beginPath(); c.moveTo(x, y - (isBar ? 46 : 22)); c.lineTo(x, y); c.stroke();
     }
     for (const l of LINES) {
@@ -41,6 +49,8 @@ function songCheck(t) {
     c.fillStyle = '#D8394E'; c.fillRect(sx(t) - 2, y - 80, 4, 140);
     // the current line's confidence
     if (L && L.line.confidence < .5) { c.fillStyle = '#D8394E'; c.font = `700 ${W * .02}px system-ui, sans-serif`; c.fillText(`⚠ line ${L.i + 1}: low confidence, is it on time?`, W / 2, y + 90); }
+    // a bar with an odd number of beats: a bar start the tracker may have put in the wrong place
+    if (_oddBar(bi)) { c.fillStyle = '#D8394E'; c.font = `700 ${W * .02}px system-ui, sans-serif`; c.fillText(`⚠ bar ${bi + 1} has ${_barBeats[bi]} beats (most have ${_usualBeats}): is the high click on the bar start?`, W / 2, y + 130); }
     c.restore();
   };
 }

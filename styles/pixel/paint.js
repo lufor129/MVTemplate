@@ -60,11 +60,14 @@ function _pixelate(c, w, h) {
 const KARAOKE_FONT = '"DotGothic16", "LXGW WenKai TC", monospace';
 let _textC = null, _textX = null, _sungK = null;
 function _pixelText(c, K, rs) {
-  const fs = 16, sz = fs * TEXT_PX, rows = K.rows || [{ from: 0, to: K.text.length }], tw = Math.ceil(W / TEXT_PX), th = Math.ceil((sz * 1.25 * rows.length + 40) / TEXT_PX);
+  // the translation (K.sub) gets a row of its own above the sung rows, in sky blue: it has no word times, so it never lights
+  const fs = 16, sz = fs * TEXT_PX, rows = K.rows || [{ from: 0, to: K.text.length }], sub = K.sub ? 1 : 0;
+  const tw = Math.ceil(W / TEXT_PX), th = Math.ceil((sz * 1.25 * (rows.length + sub) + 40) / TEXT_PX);
   if (!_textC || _textC.width !== tw || _textC.height !== th) { _textC = document.createElement('canvas'); _textC.width = tw; _textC.height = th; _textX = _textC.getContext('2d', { willReadFrequently: true }); }
   const x0c = _textX; x0c.clearRect(0, 0, tw, th); x0c.font = `${fs}px ${KARAOKE_FONT}`; x0c.textBaseline = 'middle'; x0c.textAlign = 'left';
+  if (sub) { x0c.fillStyle = PAL.sky; x0c.fillText(K.sub, Math.round(tw / 2 - x0c.measureText(K.sub).width / 2), Math.round(40 / TEXT_PX)); }
   rows.forEach((r, ri) => {
-    const s = K.text.slice(r.from, r.to), w = x0c.measureText(s).width, x = Math.round(tw / 2 - w / 2), y = Math.round(40 / TEXT_PX + ri * fs * 1.25);
+    const s = K.text.slice(r.from, r.to), w = x0c.measureText(s).width, x = Math.round(tw / 2 - w / 2), y = Math.round(40 / TEXT_PX + (ri + sub) * fs * 1.25);
     x0c.fillStyle = PAL.cream; x0c.fillText(s, x, y);
     const n = clamp(K.sung - r.from, 0, s.length);
     if (n > 0) {   // sung letters turn ochre, a whole letter at a time
@@ -75,7 +78,7 @@ function _pixelText(c, K, rs) {
   const id = x0c.getImageData(0, 0, tw, th), d = id.data;   // hard pixel edges: no anti-aliased fringe
   for (let i = 3; i < d.length; i += 4) d[i] = d[i] > 100 ? 255 : 0;
   x0c.putImageData(id, 0, 0);
-  c.save(); c.imageSmoothingEnabled = false; c.drawImage(_textC, 0, (K.top + 8) * rs, tw * TEXT_PX * rs, th * TEXT_PX * rs); c.restore();
+  c.save(); c.imageSmoothingEnabled = false; c.drawImage(_textC, 0, K.boxY * rs, tw * TEXT_PX * rs, th * TEXT_PX * rs); c.restore();
 }
 
 // Small lettering (labels on Model Sheets and other reference loops) would melt on the pixel grid, so it is kept aside
@@ -103,10 +106,11 @@ const STYLE = {
     // a dialog box, like an old game's: dark, with a light border, opening from the centre
     band(K) {
       const c = outX, sz = 16 * TEXT_PX; c.font = `${sz}px ${KARAOKE_FONT}`;
-      const rows = karaokeRows(c, K.text, W - 200), tw = Math.max(...rows.map(r => c.measureText(K.text.slice(r.from, r.to)).width));
-      const w = pix((tw + 96) * K.grow), hh = pix(80 + (rows.length - 1) * sz * 1.25), x0 = pix(W / 2 - w / 2), y0 = pix(K.top + 8);
+      const rows = karaokeRows(c, K.text, W - 200), n = rows.length + (K.sub ? 1 : 0);
+      const tw = Math.max(...rows.map(r => c.measureText(K.text.slice(r.from, r.to)).width), K.sub ? c.measureText(K.sub).width : 0);
+      const h = 80 + (n - 1) * sz * 1.25, w = pix((tw + 96) * K.grow), hh = pix(h), x0 = pix(W / 2 - w / 2), y0 = pix(Math.min(K.top + 8, H - 14 - h));
       if (w > PIX * 3) paint(rectPts(x0, y0, w, hh), { wash: PAL.night, ink: PAL.cream, sw: 1.3 });
-      K.rows = rows;
+      K.rows = rows; K.boxY = y0;
     },
     // lettered later, after the pixel grid (see overlay)
     text(c, K) { _sungK = K; },

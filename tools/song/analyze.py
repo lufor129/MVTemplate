@@ -1,11 +1,16 @@
 """analyze.py: turn a song folder (song.mp3 + lyric.txt) into song.json, the timing every other step uses.
 
   uv run --project tools/song python tools/song/analyze.py song
-  options: --lang=zh|en|ja (Whisper's language; guessed from lyric.txt), --redo=vocals,asr,refine,beats (ignore those caches)
+  options: --lang=zh|en|ja (Whisper's language; guessed from lyric.txt), --redo=vocals,asr,refine,beats (ignore those caches),
+           --no-rescue (keep Whisper's first transcript as it is)
 
 Steps (each cached in <song>/.analysis/, so a re-run only redoes what changed):
   1. vocals   HTDemucs separates the voice from the band (Whisper mishears sung lines over a full mix).
-  2. asr      Whisper large-v3 transcribes the vocals with a time for every word.
+  2. asr      Whisper large-v3 transcribes the vocals with a time for every word. On a sung (often a generated) vocal it
+              can skip whole stretches, or hear words that aren't there ("see you next time"): wherever lyric lines then
+              fail to match, that stretch is heard again in short chunks (rescue: ≤ 8 s each, without the thresholds
+              that make Whisper give up on a chunk) and its words replace the first try's (the first try is kept in
+              .analysis/asr.orig.json).
   3. align    lyric.txt is the only source of WORDS (ADR 0003): its lines are aligned to the transcript token by token,
               and the transcript only lends them rough times. Lines Whisper missed are placed between their neighbours.
   4. refine   each line is re-timed by forced alignment of its known words (torchaudio's MMS aligner) on the vocals;
@@ -51,19 +56,71 @@ def separate(song, cache):
     return out
 
 
+_whisper = None
+def whisper_model():
+    global _whisper
+    if _whisper is None:
+        import whisper
+        _whisper = whisper.load_model('large-v3', device='cpu')   # openai-whisper's alignment heads don't run on MPS
+    return _whisper
+
+
+def words_of(res, offset=0.):
+    return [{'t0': round(w['start'] + offset, 3), 't1': round(w['end'] + offset, 3), 'w': w['word'], 'p': round(w.get('probability', 0), 3)}
+            for s in res['segments'] for w in s.get('words', [])]
+
+
 def transcribe(vocals, cache, lang):
     out = cache / 'asr.json'
     if out.exists(): return json.loads(out.read_text())
-    import whisper, torch
     print(f'[asr] Whisper large-v3, language={lang} …', flush=True)
     audio = load_audio(vocals, 16000, mono=True)[0]
-    model = whisper.load_model('large-v3', device='cpu')   # openai-whisper's alignment heads don't run on MPS
-    res = model.transcribe(audio, language=lang, word_timestamps=True, condition_on_previous_text=False,
-                           fp16=False, verbose=False, no_speech_threshold=.4)
-    words = [{'t0': round(w['start'], 3), 't1': round(w['end'], 3), 'w': w['word'], 'p': round(w.get('probability', 0), 3)}
-             for s in res['segments'] for w in s.get('words', [])]
-    out.write_text(json.dumps({'language': res.get('language'), 'words': words}, ensure_ascii=False, indent=0))
+    res = whisper_model().transcribe(audio, language=lang, word_timestamps=True, condition_on_previous_text=False,
+                                     fp16=False, verbose=False, no_speech_threshold=.4)
+    out.write_text(json.dumps({'language': res.get('language'), 'words': words_of(res)}, ensure_ascii=False, indent=0))
     return json.loads(out.read_text())
+
+
+def rescue(lines, asr, vocals, cache, lang, dur):
+    """Whisper sometimes skips a whole stretch of a sung vocal, or fills it with words nobody sings ("see you next
+    time"), and a prompt doesn't fix it. Where lyric lines failed to match (confidence under .5), the stretch between
+    the matched lines around them is heard again in chunks of at most 8 s, with the thresholds that let Whisper give up
+    on a chunk turned off, and the new words replace whatever the first try put there. Runs once per transcript
+    (asr.json records it; the first try stays in asr.orig.json). Returns the new transcript, or None."""
+    if asr.get('rescued') is not None: return None
+    bad = [i for i, l in enumerate(lines) if l['confidence'] < .5]
+    spans = []   # [a, b]: from the end of the matched line before a run of failed lines to the start of the one after
+    for i in bad:
+        if spans and spans[-1][2] == i - 1: spans[-1][2] = i; continue
+        spans.append([i, i, i])
+    wins = []
+    for first, _, last in spans:
+        prv = next((lines[k] for k in range(first - 1, -1, -1) if lines[k]['confidence'] >= .5), None)
+        nxt = next((lines[k] for k in range(last + 1, len(lines)) if lines[k]['confidence'] >= .5), None)
+        a, b = max(0., prv['end'] - .3) if prv else 0., min(dur, nxt['start'] + .3) if nxt else dur
+        if b - a > .5: wins.append((round(a, 3), round(b, 3)))
+    asr = dict(asr, rescued=[list(w) for w in wins])
+    if not wins:
+        (cache / 'asr.json').write_text(json.dumps(asr, ensure_ascii=False, indent=0)); return None
+    print(f'[asr] {len(bad)} line(s) unmatched: hearing {len(wins)} stretch(es) again in short chunks …', flush=True)
+    if not (cache / 'asr.orig.json').exists(): (cache / 'asr.orig.json').write_text((cache / 'asr.json').read_text())
+    audio = load_audio(vocals, 16000, mono=True)[0]
+    words = [w for w in asr['words'] if not any(a <= (w['t0'] + w['t1']) / 2 < b for a, b in wins)]
+    for a, b in wins:
+        n = int(np.ceil((b - a) / 8)); step = (b - a) / n
+        for k in range(n):
+            c0, c1 = a + k * step, a + (k + 1) * step   # keep the words centred in [c0, c1); hear .5 s either side
+            s0, s1 = max(0., c0 - .5), min(dur, c1 + .5)
+            res = whisper_model().transcribe(audio[int(s0 * 16000): int(s1 * 16000)], language=lang, word_timestamps=True,
+                                             condition_on_previous_text=False, fp16=False, verbose=False, temperature=0.,
+                                             no_speech_threshold=.9, logprob_threshold=None, compression_ratio_threshold=None)
+            got = [w for w in words_of(res, s0) if c0 <= (w['t0'] + w['t1']) / 2 < c1]
+            print(f'  {c0:7.2f}–{c1:7.2f}  {"".join(w["w"] for w in got).strip() or "(nothing)"}', flush=True)
+            words += got
+    asr['words'] = sorted(words, key=lambda w: w['t0'])
+    (cache / 'asr.json').write_text(json.dumps(asr, ensure_ascii=False, indent=0))
+    (cache / 'refined.json').unlink(missing_ok=True)
+    return asr
 
 
 def beat_grid(song, cache):
@@ -364,6 +421,7 @@ def main():
     ap.add_argument('dir', help='song folder with the audio (song.mp3/.wav/…) and lyric.txt')
     ap.add_argument('--lang', help='Whisper language (default: guessed from lyric.txt)')
     ap.add_argument('--redo', default='', help='comma list of caches to ignore: vocals, asr, refine, beats')
+    ap.add_argument('--no-rescue', action='store_true', help="don't hear unmatched stretches again")
     a = ap.parse_args()
     d = Path(a.dir); cache = d / '.analysis'; cache.mkdir(exist_ok=True)
     audio = next((p for p in sorted(d.iterdir()) if p.stem == 'song' and p.suffix.lower() in ('.mp3', '.wav', '.flac', '.m4a', '.ogg', '.aac')), None)
@@ -371,7 +429,7 @@ def main():
     lyr = next((d / n for n in ('lyric.txt', 'lyrics.txt') if (d / n).exists()), None)
     if not lyr: sys.exit(f'no lyric.txt in {d}')
     for r in filter(None, a.redo.split(',')):
-        for f in {'vocals': ['vocals.flac', 'asr.json', 'refined.json'], 'asr': ['asr.json', 'refined.json'], 'refine': ['refined.json'], 'beats': ['beats.json']}[r]: (cache / f).unlink(missing_ok=True)
+        for f in {'vocals': ['vocals.flac', 'asr.json', 'asr.orig.json', 'refined.json'], 'asr': ['asr.json', 'asr.orig.json', 'refined.json'], 'refine': ['refined.json'], 'beats': ['beats.json']}[r]: (cache / f).unlink(missing_ok=True)
 
     sections = read_lyrics(lyr)
     lang = a.lang or guess_lang(lyr.read_text(encoding='utf-8'))
@@ -380,6 +438,12 @@ def main():
     asr = transcribe(vocals, cache, lang)
     grid = beat_grid(audio, cache)
     lines = time_lines(sections, asr)
+    if not a.no_rescue:
+        before = {i: l['confidence'] for i, l in enumerate(lines) if l['confidence'] < .5}
+        fixed = rescue(lines, asr, vocals, cache, lang, dur)
+        if fixed:
+            lines = time_lines(sections, fixed)
+            print(f"[asr] rescued {sum(1 for i in before if lines[i]['confidence'] >= .5)} of {len(before)} unmatched line(s)", flush=True)
     refine(lines, vocals, cache)
     tidy(lines)
     secs, where = make_sections([s[0] for s in sections], lines, grid, dur)
@@ -399,6 +463,15 @@ def main():
             print(f"      {l['start']:7.2f}–{l['end']:7.2f}  {l['confidence']:.2f}  {l['text']}{flag}")
     low = [l for l in lines if l['confidence'] < .5]
     print(f"\nwrote {d / 'song.json'}  ({len(low)} low-confidence line{'s' * (len(low) != 1)})")
+    # beat_this can put a bar start in a stop-time break or on a pickup: count each bar's beats and list the odd ones
+    downs = grid['downbeats']
+    counts = [sum(1 for b in beats if a - .03 <= b < z - .03) for a, z in zip(downs, downs[1:])]
+    if counts:
+        usual = max(set(counts), key=counts.count)
+        odd = [(downs[i], c) for i, c in enumerate(counts) if c != usual]
+        if odd:
+            print(f"⚠ {len(odd)} bar{'s' * (len(odd) != 1)} without {usual} beats (a bar start out of place? listen at the Song Check, "
+                  f"and fix song.json's downbeats by hand): " + ', '.join(f'{t:.2f} s ({c})' for t, c in odd))
 
 
 if __name__ == '__main__':

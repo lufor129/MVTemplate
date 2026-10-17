@@ -6,6 +6,8 @@
 //     node engine/render.mjs --loop=clawd-sheet --sheet=1 --cols=1 --w=1920 --out=…   a Model Sheet as a still
 //     node engine/render.mjs --rough [--workers=3]               the Rough Cut: half size, 12 fps, with the song → out/rough/rough.mp4
 //     node engine/render.mjs --final [--workers=3]               the MV: full size, mv.json fps, with the song → out/final/<title>.mp4
+//     node engine/render.mjs --seams                             every Chapter edge as the viewer sees it → out/check/seams.jpg
+//                                                                (--rough runs it too, when its frames are done)
 //   Look at it (open the images with the Read tool):
 //     --sheet=0.5,1,1.5,2 [--cols=4] [--w=480] --out=out/check/a.jpg          contact sheet of chosen times
 //     --strip=2.0:2.5 [--cols=6] [--w=320] --out=out/check/strip.jpg          EVERY frame in a stretch (motion)
@@ -14,7 +16,9 @@
 //     --stills=1.2,3.4 --out=out/stills                                      full-res PNGs
 //     --clip=12:20 --out=out/check/clip.mp4                                  a stretch straight to MP4, with the song
 //   Loops (LOOPS in the page): add --loop=<name> (times are then loop times); --png renders one cycle as PNGs.
-//   Other flags: --style=<name> (another Style Profile, for this render only), --tag=<text> (a sheet's cell label),
+//   Other flags: --style=<name> (another Style Profile, for this render only), --boil=<n> and --boil-amp=<k> (mv.json's
+//   boil and boilAmp, for this render only), --no-karaoke (the picture alone, for re-cuts with their own lettering),
+//   --tag=<text> (a sheet's cell label),
 //   --scale=0.5 (render smaller), --fps=24, --audio=<file>, --chrome=<path>, --soft-gl,
 //   --gpu-angle=vulkan|gl-egl (headless Linux on NVIDIA).
 //   --rough and --final are resumable: frames already on disk are kept (delete the frames folder to start over).
@@ -27,7 +31,9 @@ import { homedir } from 'node:os';
 import { build, ROOT } from './build.mjs';
 
 const args = Object.fromEntries(process.argv.slice(2).map(a => { const [k, ...v] = a.replace(/^--/, '').split('='); return [k, v.length ? v.join('=') : true]; }));
-const { MV, dir: MVDIR } = build(args.mv || '.', args.style ? { style: args.style } : {});
+// --style, --boil, --boil-amp, --no-karaoke: settings that win over mv.json for this render only (the Style Sample's lineup, boil tests)
+const over = { ...(args.style ? { style: args.style } : {}), ...(args.boil != null ? { boil: +args.boil } : {}), ...(args['boil-amp'] != null ? { boilAmp: +args['boil-amp'] } : {}), ...(args['no-karaoke'] ? { karaoke: false } : {}) };
+const { MV, dir: MVDIR } = build(args.mv || '.', over);
 const OUT = join(MVDIR, 'out'), at = p => resolve(process.cwd(), p);
 const mode = args.songcheck ? 'songcheck' : args.rough ? 'rough' : args.final ? 'final' : null;
 const scale = +(args.scale || (mode === 'rough' || mode === 'songcheck' ? .5 : 1));
@@ -92,6 +98,69 @@ const frameOf = async (page, t, type, q) => {
 };
 const lengthOf = page => page.evaluate(() => window.lengthOf());
 
+// The Seam check: every edge between two Chapters, as the final shows it (mv.json fps, and on twos the drawing each
+// frame holds, which can still be the earlier Chapter's just after the edge). For each edge it shows the last two
+// drawings of the earlier Chapter, its state at the edge itself (which no frame shows), and the first two drawings of
+// the later one. Two things are flagged:
+//   ⚠ the Chapters meet on a full cover (a flash, a solid wipe, steam, black) that no frame shows: the earlier one
+//     reaches it after its last drawing (on twos that's at END − hold/fps), or the later one has already left it by
+//     its first. The viewer sees a partly covered frame jump to the other Chapter.
+//   • the picture jumps across the edge far more than it moves on either side: a hard cut, fine only where the
+//     Storyboard asks for one.
+// Writes out/check/seams.jpg and prints one line per edge.
+async function seamCheck(page, out) {
+  const r = await page.evaluate(async () => {
+    const F = MV.fps, Hd = Math.max(1, MV.hold || 1), q = i => Math.floor(i / Hd + 1e-6) * Hd / F;   // a frame's drawing, as draw() picks it
+    const sm = document.createElement('canvas'); sm.width = 192; sm.height = 108; const sx = sm.getContext('2d', { willReadFrequently: true });
+    const cw = 384, chh = 216, edges = [];
+    for (let i = 0; i + 1 < CH.length; i++) if (Math.abs(CH[i].end - CH[i + 1].start) < 1e-3) edges.push([CH[i].name, CH[i + 1].name, CH[i + 1].start]);
+    const sheet = document.createElement('canvas'); sheet.width = cw * 5; sheet.height = Math.max(1, edges.length) * chh; const c = sheet.getContext('2d');
+    const shot = async (t, cell, row, label, raw) => {
+      const hold = MV.hold; if (raw) MV.hold = 1;
+      await window.renderAt(t, 'image/jpeg', .5); MV.hold = hold;
+      sx.drawImage(outC, 0, 0, 192, 108); c.drawImage(outC, cell * cw, row * chh, cw, chh);
+      c.fillStyle = 'rgba(0,0,0,.65)'; c.font = '14px sans-serif'; c.fillRect(cell * cw, row * chh, c.measureText(label).width + 12, 22); c.fillStyle = '#fff'; c.fillText(label, cell * cw + 6, row * chh + 16);
+      return sx.getImageData(0, 0, 192, 108).data;
+    };
+    const diff = (a, b) => { let s = 0; for (let i = 0; i < a.length; i += 4) s += Math.abs(a[i] - b[i]) + Math.abs(a[i + 1] - b[i + 1]) + Math.abs(a[i + 2] - b[i + 2]); return s / (a.length / 4) / 3; };
+    // how much detail a frame has: the mean brightness step between neighbouring cells of a 48 × 27 grid (cells
+    // average out the paper grain), under about 3 for a full cover
+    const detail = a => {
+      const g = new Float32Array(48 * 27);
+      for (let y = 0; y < 108; y++) for (let x = 0; x < 192; x++) { const i = (y * 192 + x) * 4; g[(y >> 2) * 48 + (x >> 2)] += (a[i] * .3 + a[i + 1] * .59 + a[i + 2] * .11) / 16; }
+      let s = 0, n = 0;
+      for (let y = 0; y < 27; y++) for (let x = 0; x < 48; x++) { if (x < 47) { s += Math.abs(g[y * 48 + x] - g[y * 48 + x + 1]); n++; } if (y < 26) { s += Math.abs(g[y * 48 + x] - g[y * 48 + x + 48]); n++; } }
+      return s / n;
+    };
+    const rows = [];
+    for (const [k, [A, B, E]] of edges.entries()) {
+      let iB = Math.ceil(E * F - 1e-6); while (q(iB) < E - 1e-6) iB++;   // the first frame that shows the later Chapter
+      const tA = q(iB - 1), tA0 = tA - Hd / F, tB = q(iB), tB1 = tB + Hd / F;
+      const a0 = await shot(tA0, 0, k, `${A} ${tA0.toFixed(3)}`), a1 = await shot(tA, 1, k, `${A} last ${tA.toFixed(3)}`);
+      const aE = await shot(E - 1e-4, 2, k, `${A} at the edge (not shown)`, true);
+      const b0 = await shot(tB, 3, k, `${B} first ${tB.toFixed(3)}`), b1 = await shot(tB1, 4, k, `${B} ${tB1.toFixed(3)}`);
+      const bE = await shot(E + 1e-4, 3, k, '', true);   // the later Chapter at the edge itself, for the numbers only
+      await shot(tB, 3, k, `${B} first ${tB.toFixed(3)}`);
+      // they meet on a full cover; a side misses it when the drawing it shows is further from the cover than one of its
+      // own steps (a cover reached gradually, drawing by drawing, reads fine)
+      const cover = diff(aE, bE) < 4 && detail(aE) < 3, mA = diff(a0, a1), mB = diff(b0, b1);
+      rows.push({ A, B, E, jump: diff(a1, b0), move: Math.max(mA, mB), tA, tB,
+        lateA: cover && diff(a1, aE) > Math.max(4, 1.5 * mA), earlyB: cover && diff(b0, bE) > Math.max(4, 1.5 * mB) });
+    }
+    return { url: sheet.toDataURL('image/jpeg', .88), rows, hold: Hd, fps: F };
+  });
+  if (!r.rows.length) { console.log('seams: no two Chapters meet yet'); return; }
+  mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, Buffer.from(r.url.slice(r.url.indexOf(',') + 1), 'base64'));
+  console.log(`seams (${r.fps} fps, hold ${r.hold}) → ${out}\n  jump = how much the picture changes across the edge, move = on either side (mean |Δ| of 0..255)`);
+  for (const e of r.rows) {
+    const note = [];
+    if (e.lateA) note.push(`⚠ ${e.A} reaches the full cover after its last drawing shown (${e.tA.toFixed(3)}): reach it by END − hold/fps`);
+    if (e.earlyB) note.push(`⚠ ${e.B} has already left the full cover by its first drawing shown (${e.tB.toFixed(3)}): hold it until then`);
+    if (!note.length && e.jump > 1.8 * e.move + 3) note.push('• a jump across the edge: fine only where the Storyboard asks for a cut, a flash or a smash');
+    console.log(`  ${e.E.toFixed(3)}  ${e.A} → ${e.B}  jump ${e.jump.toFixed(1)}  move ${e.move.toFixed(1)}  ${note.join('; ') || 'ok'}`);
+  }
+}
+
 // Parallel and resumable: each worker pulls the next missing frame; files are written atomically.
 async function frames(framesDir, a, b, workers) {
   const probe = await openPage(), len = await lengthOf(probe); await probe.close();
@@ -143,9 +212,12 @@ if (args.sheet || args.strip) {
     while (next < n) { const i = next++; writeFileSync(`${out}/f${String(i).padStart(4, '0')}.png`, await frameOf(page, a + i / fps, 'image/png')); }
   }));
   console.log(`${n} frames → ${out}  (${((Date.now() - start) / n).toFixed(0)} ms/frame)`);
+} else if (args.seams) {
+  await seamCheck(await openPage(), at(typeof args.seams === 'string' ? args.seams : join(OUT, 'check', 'seams.jpg')));
 } else if (mode === 'rough' || mode === 'final') {
   const [a, b] = args.range ? span(args.range) : [0, undefined], fdir = join(OUT, mode, 'frames');
   await frames(fdir, a, b, +(args.workers || 3));
+  if (mode === 'rough') await seamCheck(await openPage(), join(OUT, 'check', 'seams.jpg'));
   await browser.close();
   const name = mode === 'rough' ? 'rough.mp4' : (MV.title || 'mv').replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '').toLowerCase() + '.mp4';
   await encode(fdir, at(args.out || join(OUT, mode, name)), audioOf());

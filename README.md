@@ -4,7 +4,7 @@ A template for making a hand-painted music video with Claude. Copy it once per M
 
 > Read GUIDE.md, then make an MV for this song: a robot learning to dance.
 
-Both the song and `lyric.txt` are required. Claude first asks a few questions (the Brief: what kind of MV, format, karaoke, style; a style that doesn't exist yet gets made first and shown to you as a Style Sample), then analyses the song (when each line is sung, every beat and bar, the sections), writes a storyboard, designs the characters, builds the video chapter by chapter in [p5.js](https://p5js.org) and [p5.brush](https://github.com/acamposuribe/p5.brush), and renders it with the song. It stops at five Gates for you to approve (six with a new style):
+Both the song and `lyric.txt` are required; a `translation.txt` (one line per lyric line) adds a translated row to the karaoke. Claude first asks a few questions (the Brief: what kind of MV, format, karaoke, style; a style that doesn't exist yet gets made first and shown to you as a Style Sample), then analyses the song (when each line is sung, every beat and bar, the sections), writes a storyboard, designs the characters, builds the video chapter by chapter in [p5.js](https://p5js.org) and [p5.brush](https://github.com/acamposuribe/p5.brush), and renders it with the song. It stops at five Gates for you to approve (six with a new style):
 
 | Gate | you get | you check |
 |---|---|---|
@@ -15,7 +15,7 @@ Both the song and `lyric.txt` are required. Claude first asks a few questions (t
 | First Chapter | a clip of the first chapter | the look and the pace |
 | Rough Cut | `out/rough/rough.mp4`, half size, 12 fps | the whole thing against the song |
 
-Then it renders `out/final/<title>.mp4`.
+Then it renders `out/final/<title>.mp4`. To post it, it can cut a vertical short for Reels, Threads or Shorts and write the YouTube description (chapters, lyrics, translation). Afterwards it lists what this MV taught that could come back into the template, and asks you about each.
 
 It grew out of [ClaudeAnimationBase](https://github.com/JohnHeibel/ClaudeAnimationBase) (the character kit, the watercolour medium and the animation guide) and the music video [I'm Upping My P(doom)](https://github.com/JohnHeibel/PDoomVideo), which was this template's first test.
 
@@ -35,8 +35,10 @@ uv sync --project tools/song
 uv run --project tools/song python tools/song/analyze.py song   # song/song.json
 node engine/render.mjs --songcheck                              # the Song Check video
 node engine/build.mjs && open studio.html                       # scrub or play along in Chrome
-node engine/render.mjs --rough                                  # the Rough Cut
+node engine/render.mjs --rough                                  # the Rough Cut (and the Seam check)
 node engine/render.mjs --final                                  # the MV
+python3 tools/shorts/make_short.py --from=2 --to=34 --name=open # a vertical short (needs Pillow)
+python3 tools/publish/description.py --intro=intro.txt          # the YouTube description
 ```
 
 Every render command takes `--mv=<folder>` for an MV kept elsewhere.
@@ -53,5 +55,6 @@ Every render command takes `--mv=<folder>` for an MV kept elsewhere.
 | [engine/](engine/) | Beat grid, timeline, karaoke, acting tools, build and render |
 | [styles/](styles/) | Style Profiles: how paint lands on the frame. [watercolor/](styles/watercolor/STYLE.md), [cel/](styles/cel/STYLE.md), [cutout/](styles/cutout/STYLE.md), [pixel/](styles/pixel/STYLE.md) |
 | [tools/song/](tools/song/) | The song analysis |
+| [tools/shorts/](tools/shorts/), [tools/publish/](tools/publish/) | A vertical short from the MV; its YouTube description |
 | [examples/clawd/](examples/clawd/) | Clawd, an example character with 31 emotions |
 | `studio.html` | Scrub or play an MV in Chrome |

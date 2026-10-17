@@ -5,7 +5,7 @@ A Style Profile is one complete look: not only how paint lands on the frame (its
 | profile | the look | drawn with |
 |---|---|---|
 | [watercolor/](watercolor/STYLE.md) | light, soft watercolour: pigment pooling at edges and settling in blotches, sepia lines lost where the light hits | p5.brush, then a pigment pass |
-| [cel/](cel/STYLE.md) | TV cel: bold boiling ink, saturated flat colour, a hard shadow tone found from the light, broad acting, on twos | plain p5 shapes |
+| [cel/](cel/STYLE.md) | TV cel: bold brush ink that holds still, saturated flat colour, a hard shadow tone found from the light, broad acting, on twos | plain p5 shapes |
 | [cutout/](cutout/STYLE.md) | paper cut-out: muted fibrous paper cut in straight snips, no outlines, shadows, halftone; nothing boils or squashes | plain p5 shapes, textured |
 | [pixel/](pixel/STYLE.md) | pixel art: 320×180 grid, small palette, dithering, a dialog-box karaoke | plain p5 shapes, then a pixel grid |
 
@@ -17,7 +17,7 @@ Two profiles that only paint the same picture with different texture look the sa
 |---|---|---|
 | colour and value | its `tone()`, which every colour going into `paint()` passes through | lifted and soft · saturated · muted and warm · snapped to the palette |
 | light and shade | its `paint()`, reading `LIGHT` | pigment pools at edges · a hard shadow side found from the light · halftone and shadows under pieces · dithering |
-| lines | its `paint()` and `inkLine()` | sepia, lost on the lit side · bold, boiling · none round a piece · one dark pixel |
+| lines | its `paint()` and `inkLine()` | sepia, lost on the lit side · bold, still · none round a piece · one dark pixel |
 | edges and shapes | its `paint()` | soft, drifting · clean · straight scissor snips · stepped |
 | motion | `STYLE.pose` | as acted · squash and smears pushed · no squash, no smears · no smears |
 | lettering | `STYLE.karaoke`, `letterFont` | handwriting on a pale wash · rounded subtitle letters, no band · heavy serif on a paper strip · pixel font in a dialog box |
@@ -44,7 +44,7 @@ A profile is a folder `styles/<name>/` with:
 | `STYLE.flush()` | makes everything painted so far land before p5 draws an image over it |
 | `STYLE.letterFont(size)` | the CSS font for Sound Words |
 | `STYLE.fonts` | font family names to wait for before rendering |
-| `STYLE.karaoke.band(K)`, `.text(ctx, K)` | paint the karaoke band during the frame; letter it on the 2D canvas. `K` = `{ text, a, b, grow, sung, top }` (see engine/karaoke.js) |
+| `STYLE.karaoke.band(K)`, `.text(ctx, K)` | paint the karaoke band during the frame; letter it on the 2D canvas. `K` = `{ text, sub, a, b, grow, sung, top }` (see engine/karaoke.js). `sub` is the line's translation (song/translation.txt), lettered on a row above the sung words and never lit; `karaokeLayout(ctx, K, font, size)` works out where every row goes (`K.rows`, `K.subY`, `K.subSize`, `K.box`), so a profile only paints and letters |
 | `STYLE.post()` | optional: runs on the painted frame once it's done, before the lettering (watercolour's pigment pass, a `filter()` shader) |
 | `STYLE.pose(o)` | optional: takes every Character's pose and returns it the way the look moves (cut-out paper doesn't squash; cel squashes more) |
 

@@ -42,9 +42,10 @@ const BRUSHES = { ink: [1, 1, 0], inkfine: [.6, 1, 0], dry: [1.5, .6, .35], '2B'
 // The ink: a closed or open path, resampled and nudged on every boil drawing, thick and thin like a pressed brush.
 function _ink(P, sw, col, br, closed) {
   const [bw, ba, broken] = BRUSHES[br] || BRUSHES.ink, w = Math.max(.6, sw * INK_W * bw);
+  const ph = jit(Math.PI);   // drawn before the points, so a line that gains or loses a point keeps its thick and thin
   const S = _resample(P, Math.max(5, w * 1.6), closed).map(([x, y]) => [x + jit(w * .14), y + jit(w * .14)]);
   if (S.length < 2) return;
-  const n = S.length, ph = jit(Math.PI), taper = Math.min(n / 3, 4);
+  const n = S.length, taper = Math.min(n / 3, 4);
   const width = i => w * (.78 + .3 * Math.sin(i * .55 + ph)) * (closed ? 1 : clamp(Math.min(i + .6, n - .4 - i) / taper, .35, 1));
   if (!broken) return _stroke(S, width, col, ba, closed);
   for (let i = 0; i < S.length - 1; i++) if (random() > broken) _stroke([S[i], S[i + 1]], width, col, ba, false);
@@ -105,15 +106,20 @@ const STYLE = {
     size: MV.format === '9:16' ? 58 : 54,
     // no band: bold rounded letters with a thick ink edge, like a broadcast subtitle; nothing to paint here
     band(K) {
-      const c = outX; c.font = `800 ${this.size}px ${KARAOKE_FONT}`;
-      K.rows = karaokeRows(c, K.text, W - 160);
+      karaokeLayout(outX, K, s => `800 ${s}px ${KARAOKE_FONT}`, this.size);
     },
-    // cream letters in a thick ink edge, turning yellow as they are sung
+    // the translation in pale blue, then the sung line: cream letters in a thick ink edge, turning yellow as they are sung
     text(c, K) {
-      const sz = this.size; c.font = `800 ${sz}px ${KARAOKE_FONT}`; c.textBaseline = 'middle'; c.textAlign = 'left'; c.lineJoin = 'round';
-      const rows = K.rows || [{ from: 0, to: K.text.length }], y0 = K.top + 8 + 44 - (rows.length - 1) * sz * .6;
-      rows.forEach((r, ri) => {
-        const s = K.text.slice(r.from, r.to), w = c.measureText(s).width, x = W / 2 - w / 2, y = y0 + ri * sz * 1.2;
+      const sz = this.size; c.textBaseline = 'middle'; c.textAlign = 'left'; c.lineJoin = 'round';
+      if (K.sub) {
+        const ss = K.subSize, x = W / 2 - (c.font = `800 ${ss}px ${KARAOKE_FONT}`, c.measureText(K.sub).width) / 2;
+        c.lineWidth = ss * .26; c.strokeStyle = PAL.ink; c.strokeText(K.sub, x, K.subY);
+        c.fillStyle = tone('#CFE8FF'); c.fillText(K.sub, x, K.subY);
+      }
+      c.font = `800 ${sz}px ${KARAOKE_FONT}`;
+      const rows = K.rows || [{ from: 0, to: K.text.length, y: K.top + 52 }];
+      rows.forEach(r => {
+        const s = K.text.slice(r.from, r.to), w = c.measureText(s).width, x = W / 2 - w / 2, y = r.y;
         c.lineWidth = sz * .26; c.strokeStyle = PAL.ink; c.strokeText(s, x, y);
         c.fillStyle = PAL.cream; c.fillText(s, x, y);
         const n = clamp(K.sung - r.from, 0, s.length);

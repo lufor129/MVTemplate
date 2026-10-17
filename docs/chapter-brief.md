@@ -25,12 +25,14 @@ You are building one Chapter of a music video, in parallel mode. Other subagents
 - Keep every rule in the Style Profile's STYLE.md, and run its "What to check" list on your sheets.
 - Call `boilSeed('<unique key>')` before each separate background element, prop or effect; give Characters that come and go a stable `boilKey`.
 - Keep faces and key action above `KARAOKE_TOP` while a line is showing.
-- Don't name a local variable after a p5 global (`pop`, `push`, `fill`, `color`, `scale`, `image`, `text`, `line`, `key`…): it breaks p5 calls in that scope.
+- Don't name a local variable after a p5 global (`pop`, `push`, `fill`, `color`, `scale`, `image`, `text`, `line`, `key`…): it breaks p5 calls in that scope. Keep every helper inside your IIFE: the build refuses a top-level name the browser, p5, the engine or the Style Profile already has.
+- Make your Seams with the shared transition helpers in `<mv>/mv/characters/` when your brief names one; don't write your own version of it.
+- On twos (`"hold": 2`) the last drawing your Chapter shows is at its end − 1/12 s (end − hold/fps), and your first is the first drawing at or after your start. A Seam out must reach its contract state by your last drawing; a Seam in that starts on a full cover must still show it at your first.
 - Guests you introduce are designed in your file. If your brief says one goes on `CAST`, define `CAST.<name> = (x, y, s, t, o) => …`, standing on (x, y), `s` on the Lead's size scale.
 - Don't commit to git.
 
 ## Review loop (budget)
-Use GUIDE.md's review loop and actually look at every image with the Read tool. At least: one contact sheet per Shot; a strip for every key motion and every Seam (each Shot boundary, and the first and last 0.5 s of the Chapter, which must meet your Seam contracts exactly); a crop for every Guest's face and every face that carries the story. Fix what you find and look again. Name every check image with your Chapter's prefix (`c04_…`) under `<mv>/out/check/`. Keep frames under ~1.5 s each. At most one render process at a time from you.
+Use GUIDE.md's review loop and actually look at every image with the Read tool. Once a neighbour's Chapter exists, check your shared edge as the final will show it: `node engine/render.mjs --mv=<mv> --seams`. At least: one contact sheet per Shot; a strip for every key motion and every Seam (each Shot boundary, and the first and last 0.5 s of the Chapter, which must meet your Seam contracts exactly); a crop for every Guest's face and every face that carries the story. Fix what you find and look again. Name every check image with your Chapter's prefix (`c04_…`) under `<mv>/out/check/`. Keep frames under ~1.5 s each. At most one render process at a time from you.
 
 ## When you're done
 Reply with: the Shot list with final times; what each Seam does and how you checked it; the Sound Words used; the CAST entries you added (signature and options); any changes from the Storyboard and why; shared-file bugs; what you couldn't make work; the paths of 2–3 check images that best show the Chapter.

@@ -19,6 +19,11 @@
 //   dx, dy (in u; −dy = up), sq (squash; negative stretches), rot, flip, view, smear 0..1 + smearDir ±1 (0 = both),
 //   walk (leg phase), aL / aR (limb raise: 0 = out, + up, − down), lookX / lookY (−1..1), squint 0..1,
 //   emote + emoteK (0..1 pop) + emoteAge, boilKey (a stable boil id if characters come and go mid-shot)
+// Two more are optional, but a Character that can sit or hold a prop takes them under these names, so every Chapter
+// asks for them the same way (list them in the file's header, with the seat height):
+//   sit 0..1      seated: the hips drop to a seat (0 standing, 1 sitting; in between, sitting down)
+//   held(u, sw)   draws a prop held against the body (a banjo, a ledger), in body-local units: over the body, under
+//                 the hands in front of it
 //
 // The Character is a function, ch(x, y, u, pose), with the Acting Tools on it:
 //   ch.feel(name, t, over)       one emotion, alive at t: face and body together

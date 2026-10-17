@@ -1,6 +1,6 @@
 # Cel
 
-Hand-drawn cel animation: every shape inked with a brush line that boils, flat colour laid in a little off the line,
+Hand-drawn cel animation: every shape inked with a brush line, flat colour laid in a little off the line,
 and hard-edged shadow tones, on animation paper, moving on twos. It draws with plain p5 shapes (no p5.brush), so it
 renders several times faster than watercolour. This file holds the rules of the medium and its drawing API;
 [GUIDE.md](../../GUIDE.md) holds everything that doesn't depend on the look.
@@ -9,7 +9,7 @@ renders several times faster than watercolour. This file holds the rules of the 
 
 What makes it read as cel at a glance. The Style Sample Gate checks these.
 
-- **Bold** ink lines that **boil**: redrawn slightly differently 12 times a second, thick and thin like a pressed brush.
+- **Bold** ink lines, thick and thin like a pressed brush, a little irregular, and **still**: style.json sets `boil: 0`, so each line is drawn once and holds. (People found a boiling line distracting. An MV that wants the boil back sets `"boil": 12` in mv.json, and `"boilAmp"` below 1 to make it gentler.)
 - **Saturated flat colour** in every shape, printed a couple of pixels off its line, like hand colouring.
 - **A hard shadow side on every solid shape**, found from the light: one flat tone, darker and nudged toward red-violet (skin goes rosy, not grey), never a gradient; big shapes get a thin lit edge too.
 - **Broad acting**: squash, stretch and smears pushed further than the Character asks (`STYLE.pose`).
@@ -21,7 +21,7 @@ What makes it read as cel at a glance. The Style Sample Gate checks these.
 - **Ink every solid shape.** Characters and props get `wash` plus an ink outline. Backgrounds may drop the outline (`ink: null`) for distance, but the near ground keeps one.
 - **The shadow side paints itself.** Every `wash` gets a hard shadow tone on the side away from `LIGHT` (frame.js; from the upper left unless a Shot sets it). Point `LIGHT` at the scene's real light (a window on the right: `LIGHT = [-1, .2]`); pass `shade: false` for shapes that must stay flat (a screen, a sign, a pupil). Use `fill` for what the light can't find by itself: cast shadows, one extra tone. Don't stack many translucent fills to fake a gradient.
 - **Colour goes clean and saturated.** `paint()` tones every colour for you (`tone()`), Characters' own included, so a muted palette still lands bright.
-- **The lines boil.** `jit()` and `random()` are reseeded `MV.boil` times a second (12). Call `boilSeed(key)` before each separate element, or one moving thing makes everything drawn after it jitter. Characters seed themselves.
+- **Seed every element.** `jit()` and `random()` are reseeded `MV.boil` times a second (0 here: once), so a still line is drawn the same every frame. Call `boilSeed(key)` before each separate element, or one moving thing changes the randomness of everything drawn after it and makes it jitter. Characters seed themselves.
 - **Everything is flat 2D. Never project 3D.** Characters turn through drawn key views (`ch.turn()`); depth comes from overlap, scale and colour.
 - **Light is `glow()`**, added on top, never a painted gradient.
 - **No pure black or white.** `PAL.ink` for black, `PAL.cream` or `PAL.paper` for white. A small palette per MV (`"palette"` in mv.json).
@@ -34,7 +34,7 @@ GUIDE.md's review loop sends you here. In every sheet and strip, look for:
 - solid shapes with no ink line, or a line so thin it disappears at the shot's zoom
 - shading that looks like a gradient (many stacked fills) instead of one or two hard tones
 - shadow sides that contradict the scene's light (set `LIGHT`), or a shadow on something that should be flat (`shade: false`)
-- lines that don't boil in a strip, or boil every frame (a missing `boilSeed`)
+- still lines that change from frame to frame (a missing `boilSeed`), or, with boil on, lines that don't boil
 - 3D rotation, perspective boxes or projected turns
 - pure black or white instead of `PAL.ink` and `PAL.cream`/`PAL.paper`
 - outlines that turned into thick blobs under a zoomed camera: scale `sw` down with the zoom

@@ -23,6 +23,7 @@ const DEFAULTS = {
   fps: 24,
   hold: 1,                 // frames each drawing holds: 2 animates on twos (12 drawings a second at 24 fps)
   boil: 12,                // boil drawings per second; 0 = nothing boils
+  boilAmp: 1,              // how far edges wander as they boil: 1 = the Style Profile's own amount, .5 = half
   palette: {},             // colours added to or replacing the Style Profile's PAL
   characters: [],          // Character files from elsewhere in the template, e.g. "examples/clawd/clawd.js"
   bpm: 120, duration: 10,  // only used when there is no song.json
@@ -30,6 +31,16 @@ const DEFAULTS = {
 const ENGINE = ['math.js', 'song.js', 'frame.js', 'geometry.js', 'acting.js', 'emotes.js', 'timeline.js', 'karaoke.js', 'songcheck.js', 'stylesample.js'];
 
 const readJSON = p => JSON.parse(readFileSync(p, 'utf8'));
+// The names a script declares at its top level (column 0): function, class, var/let/const (destructuring too), and a
+// bare `name = …`, which makes a global as well. Code inside an IIFE is the script's own and isn't counted.
+export function topNames(src) {
+  const out = new Set(), id = '[A-Za-z_$][\\w$]*';
+  for (const m of src.matchAll(new RegExp(`^(?:async\\s+)?function\\s*\\*?\\s*(${id})|^class\\s+(${id})|^(?:const|let|var)\\s+(${id})|^(${id})\\s*=(?![=>])`, 'gm')))
+    out.add(m[1] || m[2] || m[3] || m[4]);
+  for (const m of src.matchAll(/^(?:const|let|var)\s*[{[]([^}\]]*)[}\]]/gm))
+    for (const part of m[1].split(',')) { const n = part.split('=')[0].split(':').pop().trim().replace(/^\.\.\./, ''); if (n) out.add(n); }
+  return out;
+}
 const jsIn = d => existsSync(d) ? readdirSync(d).filter(f => f.endsWith('.js')).sort().map(f => join(d, f)) : [];
 
 // over: settings that win over mv.json for this build only (render.mjs --style=<name>, for the Style Sample's lineup).
@@ -45,6 +56,14 @@ export function build(mvDir = '.', over = {}) {
   if (existsSync(songPath)) {
     SONG = readJSON(songPath);
     MV.audioPath = rel(join(dir, 'song', SONG.audio));
+    // song/translation.txt (optional): one translated line per Lyric Line, in order ([Section] marks and blank lines
+    // are skipped). Each becomes its line's `sub`, which the karaoke shows on a row above the sung words.
+    const trPath = join(dir, 'song', 'translation.txt');
+    if (existsSync(trPath)) {
+      const tr = readFileSync(trPath, 'utf8').split(/\r?\n/).map(s => s.trim()).filter(s => s && !/^\[.+\]$/.test(s));
+      if (tr.length !== SONG.lines.length) throw new Error(`build: song/translation.txt has ${tr.length} lines, song.json ${SONG.lines.length}`);
+      SONG.lines.forEach((l, i) => { l.sub = tr[i]; });
+    }
   } else {   // a silent MV: an even grid at mv.json's bpm, four beats to the bar
     const beat = 60 / MV.bpm, n = Math.ceil(MV.duration / beat) + 1, beats = Array.from({ length: n }, (_, i) => +(i * beat).toFixed(3));
     SONG = { audio: null, duration: MV.duration, bpm: MV.bpm, beats, downbeats: beats.filter((_, i) => i % 4 === 0),
@@ -62,6 +81,19 @@ export function build(mvDir = '.', over = {}) {
     ...jsIn(join(dir, 'mv', 'chapters')).map(rel),
   ];
   for (const s of scripts) if (!existsSync(join(ROOT, s))) throw new Error(`build: missing ${s}`);
+  // An MV's own scripts may not take a name the page already has: the browser's (a `var fence` or `name = …` fails
+  // silently, or turns the value into a string), p5's (engine/globals.json, from engine/globals.mjs), or one the
+  // engine or the Style Profile declares (a second `function paint` quietly replaces the first).
+  const mine = new Set([...MV.characters, ...jsIn(join(dir, 'mv', 'characters')).map(rel), ...jsIn(join(dir, 'mv', 'chapters')).map(rel)]);
+  const taken = new Map(readJSON(join(ROOT, 'engine', 'globals.json')).map(n => [n, 'the browser or p5']));
+  for (const s of scripts.filter(s => !mine.has(s) && s.endsWith('.js') && !s.startsWith('node_modules/')))
+    for (const n of topNames(readFileSync(join(ROOT, s), 'utf8'))) if (!taken.has(n)) taken.set(n, s);
+  const clash = [];
+  for (const s of mine) for (const n of topNames(readFileSync(join(ROOT, s), 'utf8'))) {
+    if (taken.has(n) && taken.get(n) !== s) clash.push(`${s}: "${n}" is already a global of ${taken.get(n)}`);
+    else taken.set(n, s);
+  }
+  if (clash.length) throw new Error(`build: rename these top-level names (or move them inside the file's IIFE):\n  ${clash.join('\n  ')}`);
   const tags = [
     style.fonts ? `<link rel="stylesheet" href="${style.fonts}">` : '',
     ...scripts.map(s => `<script src="${s}"></script>`),

@@ -29,7 +29,8 @@ LOOPS['style-sample'] = t => {
   emote('!', cx + 150, gy - 230 + j.dy * 24, 22, seg(t, 1.1, 1.3), t - 1.1);
   sfx('POP!', W * .6, H * .36, 130, PAL.rose, t - 1.4);
   flushLetters();
-  KARAOKE = { text: 'Paint me a little song 小小的歌', a: 0, b: 4, grow: easeOut(seg(t, 0, .2)), sung: 25 * seg(t, .3, 3.5), top: KARAOKE_TOP };
+  const kt = KARAOKE_SUB ? 'Paint me a little song' : 'Paint me a little song 小小的歌';
+  KARAOKE = { text: kt, sub: KARAOKE_SUB ? '為我畫一首小小的歌' : undefined, a: 0, b: 4, grow: easeOut(seg(t, 0, .2)), sung: kt.length * seg(t, .3, 3.5), top: KARAOKE_TOP };
   STYLE.karaoke.band(KARAOKE);
   if (t > 2.4) brushWipe((t - 2.4) / 1.4, [PAL.indigo, PAL.rose]);   // fully covered at 3.1, gone by 3.8
 };
