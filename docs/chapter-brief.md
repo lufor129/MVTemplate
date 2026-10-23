@@ -27,7 +27,7 @@ You are building one Chapter of a music video, in parallel mode. Other subagents
 - Keep faces and key action above `KARAOKE_TOP` while a line is showing.
 - Don't name a local variable after a p5 global (`pop`, `push`, `fill`, `color`, `scale`, `image`, `text`, `line`, `key`…): it breaks p5 calls in that scope. Keep every helper inside your IIFE: the build refuses a top-level name the browser, p5, the engine or the Style Profile already has.
 - Make your Seams with the shared transition helpers in `<mv>/mv/characters/` when your brief names one; don't write your own version of it.
-- On twos (`"hold": 2`) the last drawing your Chapter shows is at its end − 1/12 s (end − hold/fps), and your first is the first drawing at or after your start. A Seam out must reach its contract state by your last drawing; a Seam in that starts on a full cover must still show it at your first.
+- MVs move on ones (every frame a new drawing). Only if mv.json sets `"hold": 2` (on twos) is the last drawing your Chapter shows at its end − 1/12 s (end − hold/fps), and your first the first drawing at or after your start. A Seam out must reach its contract state by your last drawing; a Seam in that starts on a full cover must still show it at your first.
 - Guests you introduce are designed in your file. If your brief says one goes on `CAST`, define `CAST.<name> = (x, y, s, t, o) => …`, standing on (x, y), `s` on the Lead's size scale.
 - Don't commit to git.
 

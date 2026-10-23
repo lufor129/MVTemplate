@@ -2,7 +2,7 @@
 
 Paper cut-out animation: every shape is a piece of coloured paper cut with scissors, laid on kraft card, casting a small
 shadow on whatever lies under it. Shading is printed as halftone dots, light as tissue paper, lines as cut strips of dark
-paper. Nothing boils, and the picture moves on twos, like puppets moved under a camera a frame at a time. This file holds
+paper. Nothing boils: pieces hold their cut shapes, like puppets moved under a camera. This file holds
 the rules of the medium and its drawing API; [GUIDE.md](../../GUIDE.md) holds everything that doesn't depend on the look.
 
 ## Signature features
@@ -14,7 +14,7 @@ What makes it read as cut-out at a glance. The Style Sample Gate checks these.
 - **No outlines**: a piece's edge is its cut and its shadow. A **shadow under every piece**, so the layers read as real paper stacked on card.
 - **Halftone dots** for dark shading and cast shadows; **tissue paper** for light.
 - Lines (eyes, mouths, cracks) as **strips of dark paper**, of even width.
-- **Nothing boils, nothing squashes, on twos** (style.json sets `boil: 0`, `hold: 2`; `STYLE.pose` takes the squash and the smears out): pieces hold still between moves, then step.
+- **Nothing boils, nothing squashes** (style.json sets `boil: 0`; `STYLE.pose` takes the squash and the smears out): pieces keep their cut shapes as they move.
 - The karaoke in a **heavy serif on a strip of dark paper**.
 
 ## The rules of the medium
@@ -77,4 +77,3 @@ Screen-space marks for crossing a Seam (call them after `camEnd()`). The Storybo
 - Every piece with a wash costs three fills (shadow, edge, textured colour): a few hundred pieces a frame is fine.
 - A piece's patch of fibre comes from its boil stream (`boilSeed`), like `jit()`: seed each separate element, or a moving one shifts the paper of everything after it.
 - The shadow offset is in world units, so it grows with the camera's zoom, as a real one would under a closer camera.
-- To move on ones (a smooth camera move), set `"hold": 1` in mv.json; the pieces still won't boil.

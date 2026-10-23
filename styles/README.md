@@ -5,7 +5,7 @@ A Style Profile is one complete look: not only how paint lands on the frame (its
 | profile | the look | drawn with |
 |---|---|---|
 | [watercolor/](watercolor/STYLE.md) | light, soft watercolour: pigment pooling at edges and settling in blotches, sepia lines lost where the light hits | p5.brush, then a pigment pass |
-| [cel/](cel/STYLE.md) | TV cel: bold brush ink that holds still, saturated flat colour, a hard shadow tone found from the light, broad acting, on twos | plain p5 shapes |
+| [cel/](cel/STYLE.md) | TV cel: bold brush ink that holds still, saturated flat colour, a hard shadow tone found from the light, broad acting | plain p5 shapes |
 | [cutout/](cutout/STYLE.md) | paper cut-out: muted fibrous paper cut in straight snips, no outlines, shadows, halftone; nothing boils or squashes | plain p5 shapes, textured |
 | [pixel/](pixel/STYLE.md) | pixel art: 320×180 grid, small palette, dithering, a dialog-box karaoke | plain p5 shapes, then a pixel grid |
 
@@ -27,7 +27,7 @@ Two profiles that only paint the same picture with different texture look the sa
 
 A profile is a folder `styles/<name>/` with:
 
-- **`style.json`**: `description` (one line; the Brief offers it when asking for the style), `libraries` (scripts loaded before everything, e.g. p5), `fonts` (a stylesheet URL), `scripts` (the profile's own files, loaded after the engine), and `defaults`: mv.json settings the look needs, which an MV's own mv.json still overrides (`"hold": 2` to move on twos, `"boil": 0` so nothing boils).
+- **`style.json`**: `description` (one line; the Brief offers it when asking for the style), `libraries` (scripts loaded before everything, e.g. p5), `fonts` (a stylesheet URL), `scripts` (the profile's own files, loaded after the engine), and `defaults`: mv.json settings the look needs, which an MV's own mv.json still overrides (`"boil": 0` so nothing boils, `"pixel": 6` for pixel's grid).
 - **`STYLE.md`**: the rules of the medium and its drawing API, written for the model, with a "Signature features" list (what makes the look recognisable at a glance; the Style Sample Gate checks it) and a "What to check" list of what the look forbids. GUIDE.md sends the model here for the rules and from its review loop for the checks. GUIDE.md keeps no rules of its own about the look; where it needs an example, it uses watercolour.
 - **Scripts** that define these globals, which the engine, the Characters and the Chapters all draw with:
 

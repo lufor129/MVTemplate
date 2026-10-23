@@ -1,8 +1,8 @@
 {
   "name": "pixel",
-  "description": "Pixel art: big square pixels (320×180), a small palette with ordered dithering, a game dialog box for the karaoke; nothing boils, on twos.",
+  "description": "Pixel art: big square pixels (320×180), a small palette with ordered dithering, a game dialog box for the karaoke; nothing boils.",
   "libraries": ["node_modules/p5/lib/p5.min.js"],
   "fonts": "https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&family=LXGW+WenKai+TC:wght@700&display=block",
   "scripts": ["palette.js", "shapes.js", "paint.js", "transitions.js"],
-  "defaults": { "hold": 2, "boil": 0, "pixel": 6 }
+  "defaults": { "boil": 0, "pixel": 6 }
 }

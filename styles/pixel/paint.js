@@ -1,6 +1,6 @@
 // paint.js: the pixel Style Profile: everything is drawn as clean flat shapes, then the finished frame is cut into big
 // square pixels (MV.pixel frame units each, 6 by default: 320×180 at 16:9), snapped to a small palette made from PAL,
-// with ordered dithering where colours blend. Nothing boils, and the picture moves on twos. The karaoke is lettered after
+// with ordered dithering where colours blend. Nothing boils. The karaoke is lettered after
 // that, in a pixel font on a finer grid, so it stays readable. See STYLE.md for the rules of the look.
 
 const PIX = MV.pixel || 6;       // frame units per pixel

@@ -1,6 +1,6 @@
 // paint.js: the cut-out Style Profile's drawing primitives: shapes cut from coloured paper with scissors, each casting a
 // small shadow on what lies under it, shading printed as halftone dots, lines as cut strips of dark paper, on kraft
-// card. Nothing boils (style.json sets boil 0) and the picture moves on twos. See STYLE.md for the rules of the look.
+// card. Nothing boils (style.json sets boil 0). See STYLE.md for the rules of the look.
 
 const INK_W = 4.4;               // strip width in frame units per unit of `sw`
 const SHADOW = [6, 9];           // how far each piece's shadow falls, in frame units

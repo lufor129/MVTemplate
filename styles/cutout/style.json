@@ -1,8 +1,8 @@
 {
   "name": "cutout",
-  "description": "Paper cut-out: muted fibrous paper cut in straight snips with no outlines, each piece casting a shadow, halftone shading; nothing boils or squashes, on twos.",
+  "description": "Paper cut-out: muted fibrous paper cut in straight snips with no outlines, each piece casting a shadow, halftone shading; nothing boils or squashes.",
   "libraries": ["node_modules/p5/lib/p5.min.js"],
   "fonts": "https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Noto+Serif+TC:wght@900&family=Klee+One:wght@600&display=block",
   "scripts": ["palette.js", "shapes.js", "paint.js", "transitions.js"],
-  "defaults": { "hold": 2, "boil": 0 }
+  "defaults": { "boil": 0 }
 }

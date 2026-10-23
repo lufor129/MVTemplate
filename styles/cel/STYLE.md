@@ -1,7 +1,7 @@
 # Cel
 
 Hand-drawn cel animation: every shape inked with a brush line, flat colour laid in a little off the line,
-and hard-edged shadow tones, on animation paper, moving on twos. It draws with plain p5 shapes (no p5.brush), so it
+and hard-edged shadow tones, on animation paper. It draws with plain p5 shapes (no p5.brush), so it
 renders several times faster than watercolour. This file holds the rules of the medium and its drawing API;
 [GUIDE.md](../../GUIDE.md) holds everything that doesn't depend on the look.
 
@@ -13,7 +13,7 @@ What makes it read as cel at a glance. The Style Sample Gate checks these.
 - **Saturated flat colour** in every shape, printed a couple of pixels off its line, like hand colouring.
 - **A hard shadow side on every solid shape**, found from the light: one flat tone, darker and nudged toward red-violet (skin goes rosy, not grey), never a gradient; big shapes get a thin lit edge too.
 - **Broad acting**: squash, stretch and smears pushed further than the Character asks (`STYLE.pose`).
-- **On twos**: every drawing holds two frames (style.json sets `hold: 2`), so motion has a hand-made snap.
+- **On ones**: every frame is a new drawing (24 a second), so motion is smooth. The hand-made feel comes from the ink, the flat paint and the broad acting, not from a stepped frame rate.
 - The karaoke as **rounded subtitle letters** with a thick ink edge, no band.
 
 ## The rules of the medium
@@ -75,4 +75,3 @@ Screen-space marks for crossing a Seam (call them after `camEnd()`). The Storybo
 - Line weight is in world units, so it grows with the camera's zoom.
 - The shadow side is a stencil clip per shape; it costs about as much as the shape itself.
 - Cost is the number of shapes: a frame of a few hundred costs well under 0.5 s. Non-convex shapes (a C, a ring) are tessellated and cost more than blobs, rects and ellipses.
-- To animate on ones instead (smooth camera moves, a fast whip pan), set `"hold": 1` in mv.json.

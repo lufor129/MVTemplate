@@ -1,8 +1,8 @@
 {
   "name": "cel",
-  "description": "TV cel animation: bold brush ink that holds still, saturated flat colour with a hard shadow tone found from the light, broad squash and stretch, subtitle-style karaoke; on twos.",
+  "description": "TV cel animation: bold brush ink that holds still, saturated flat colour with a hard shadow tone found from the light, broad squash and stretch subtitle-style karaoke.",
   "libraries": ["node_modules/p5/lib/p5.min.js"],
   "fonts": "https://fonts.googleapis.com/css2?family=Bangers&family=Chiron+GoRound+TC:wght@800&family=Klee+One:wght@600&display=block",
   "scripts": ["palette.js", "shapes.js", "paint.js", "transitions.js"],
-  "defaults": { "hold": 2, "boil": 0 }
+  "defaults": { "boil": 0 }
 }

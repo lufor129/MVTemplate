@@ -153,7 +153,7 @@ Before the first one starts, move anything two Chapters will both draw (a troupe
   - a camera state: "rolled +0.35 rad and solid red at the edge"; "zoom z = 1 − .06·k², ending at .94";
   - a held tableau: the earlier Chapter writes the exact positions, scales and camera formula in a comment block `SEAM OUT TO CHAPTER n` at the top of its file, and the later one, started after it, copies them.
 
-  On twos (`"hold": 2`) the last drawing a Chapter shows is at its end − 1/12 s (end − hold/fps), and the next Chapter's first drawing can come a little after its start. A contract that meets on a full cover (a flash, a solid wipe, black) must be reached by the earlier Chapter's last drawing and still be there at the later one's first; say so in both briefs.
+  MVs move on ones: every frame is a new drawing. Only if an MV's mv.json sets `"hold": 2` (on twos; no Style Profile does) is the last drawing a Chapter shows at its end − 1/12 s (end − hold/fps), and the next Chapter's first drawing a little after its start. A contract that meets on a full cover (a flash, a solid wipe, black) must be reached by the earlier Chapter's last drawing and still be there at the later one's first; say so in both briefs.
 - **Guests:** a Guest a later Chapter brings back (a curtain call, a callback) goes on `CAST` as `CAST.<name> = (x, y, s, t, o) => …`, standing on (x, y), with `s` on the Lead's size scale. Its subagent reports the signature and options. A Chapter that uses several Guests starts after the Chapters that define them.
 
 A subagent that stops at the usage limit keeps what it has written: when the limit resets, send it a message (SendMessage, by its name) to carry on, rather than starting a new one.
@@ -379,7 +379,7 @@ Open each image with the Read tool and actually look at it. Check:
 
 ### Time and motion
 
-- **On twos:** `"hold": 2` in mv.json holds every drawing two frames, the whole picture at once (cel, cut-out and pixel set it); `onTwos(t)` does it for one Shot.
+- **On ones:** every frame is a new drawing (`"hold": 1`, the default, and every Style Profile's). Don't move on twos: it reads as choppy. `"hold": 2` in mv.json would hold every drawing two frames, and `onTwos(t)` one Shot; use them only if the person asks for that look.
 - **Progress and keys:** `seg(t, a, b)` (0..1 through [a, b]), `kf(t, [[t0, v0], [t1, v1], ...], ease)` (keyframes; values may be arrays), `lerp`, `clamp`, `frac`, `wob(t, freq, phase)`, `TAU`.
 - **Easing:** `ease`, `easeIn`, `easeOut`, `backOut` (overshoot), `elasticOut`.
 - **Acting:** `jump(t, t0, t1, h)` → `{dy, sq}`; `take(t, t0, amt)` → `{sq, dy}`; `spring(t, t0, k, w)`; `ring(t, [t0, …])`; `arcPt(p0, p1, h, k)`; `onTwos(t)` (hold each drawing two frames).

@@ -21,7 +21,7 @@ const DEFAULTS = {
   style: 'watercolor',     // a folder in styles/
   karaoke: true,           // show each Lyric Line under the picture as it is sung
   fps: 24,
-  hold: 1,                 // frames each drawing holds: 2 animates on twos (12 drawings a second at 24 fps)
+  hold: 1,                 // frames each drawing holds: 1, on ones (2 would be on twos: 12 drawings a second, choppy)
   boil: 12,                // boil drawings per second; 0 = nothing boils
   boilAmp: 1,              // how far edges wander as they boil: 1 = the Style Profile's own amount, .5 = half
   palette: {},             // colours added to or replacing the Style Profile's PAL
