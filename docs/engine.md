@@ -14,7 +14,7 @@ The API every Character and Chapter is written against. Read it before the first
 | file | what's in it |
 |---|---|
 | `engine/song.js` | the Beat Grid, Lyric Lines and Sections from song.json |
-| `engine/frame.js` | the canvas, boil, camera, lettering, render hooks, the studio |
+| `engine/frame.js` | the canvas (WEBGL, or Canvas 2D for a profile whose style.json says `"renderer": "2d"`), boil, camera, lettering, render hooks, the studio |
 | `engine/geometry.js` | point lists for shapes |
 | `engine/math.js` | easing, keyframes, colour mixing, springs |
 | `engine/acting.js` | the Character Contract, the Acting Tools, dances, Model Sheets |

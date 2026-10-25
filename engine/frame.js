@@ -8,6 +8,11 @@
 // styles/README.md).
 const [W, H] = MV.format === '9:16' ? [1080, 1920] : [1920, 1080];
 const RS = +(new URLSearchParams(location.search).get('scale') || 1);   // render scale
+// The canvas the frame is painted on: p5's WEBGL (every profile but those whose style.json says "renderer": "2d"), or
+// a plain Canvas 2D one, which the profile paints through drawingContext. p5's transforms (push, translate, the camera)
+// apply to both; only WEBGL puts the origin at the canvas centre, so frame space starts with _origin().
+const GL = MV.renderer !== '2d';
+function _origin() { if (GL) translate(-W * RS / 2, -H * RS / 2); }
 const BOIL = MV.boil ?? 12;                                              // boil drawings per second
 // The light: the way it travels, as a unit vector (from the upper left by default, or mv.json "light": [x, y]). Style
 // Profiles that shade by themselves (cel) read it. A Shot may set LIGHT for its own frames; every frame starts from
@@ -27,7 +32,7 @@ let BOILN = 0, CHAR_N = 0;
 const boilSeed = key => { let h = 2166136261; for (const c of key + '|' + BOILN) h = Math.imul(h ^ c.charCodeAt(0), 16777619); randomSeed(h >>> 0); };
 
 // Put the p5 matrix back to frame space (top-left origin, frame units), whatever transforms are active.
-function frameSpace() { resetMatrix(); translate(-W * RS / 2, -H * RS / 2); scale(RS); }
+function frameSpace() { resetMatrix(); _origin(); scale(RS); }
 
 // ---------- camera ----------
 // camBegin(cx, cy, zoom, rot): world point (cx, cy) lands at screen centre. Letters queued while a camera is
@@ -72,14 +77,16 @@ let letG = null;
 function flushLetters() {
   if (!LETTERS.length) return;
   letG.clear(); const c = letG.drawingContext; c.save(); c.scale(RS, RS); drawLetters(c); c.restore(); LETTERS = [];
-  STYLE.flush();
-  push(); resetMatrix(); translate(-W * RS / 2, -H * RS / 2); image(letG, 0, 0); pop();
+  // the profile lands what it has painted so far; one that doesn't paint straight onto the canvas (an SVG scene) takes
+  // the letters' canvas and places it itself, returning true
+  if (STYLE.flush(c.canvas) === true) return;
+  push(); resetMatrix(); _origin(); image(letG, 0, 0); pop();
 }
 
 // ---------- frame ----------
 let T = 0, outC = null, outX = null;
 async function setup() {
-  createCanvas(W * RS, H * RS, WEBGL); pixelDensity(1); noLoop();
+  createCanvas(W * RS, H * RS, GL ? WEBGL : P2D); pixelDensity(1); noLoop();
   await STYLE.setup();
   letG = createGraphics(W * RS, H * RS); letG.pixelDensity(1);
   outC = document.getElementById('out'); outC.width = W * RS; outC.height = H * RS; outX = outC.getContext('2d');
@@ -88,16 +95,17 @@ async function setup() {
   window.ready = true;
   if (!location.search.includes('render')) devUI();
 }
-function draw() {
+// async, so a Style Profile's post may be (an SVG scene rasterised at the end of the frame); p5's redraw() awaits it
+async function draw() {
   if (!window.ready) return;
   LETTERS = []; CAM = LAST_CAM = null; LIGHT = LIGHT0;
-  push(); translate(-W * RS / 2, -H * RS / 2); scale(RS);
+  push(); _origin(); scale(RS);
   BOILN = Math.floor(T * BOIL); CHAR_N = 0; boilSeed('frame'); noiseSeed(77);
   STYLE.underlay();
   // MV.hold > 1: every drawing holds that many frames (on twos at 2), the whole picture at once
   drawWorld(MV.hold > 1 ? Math.floor(T * MV.fps / MV.hold + 1e-6) * MV.hold / MV.fps : T);
   pop();
-  if (STYLE.post) STYLE.post();   // the Style Profile's pass over the whole painted frame (watercolour: pigment and edges)
+  if (STYLE.post) await STYLE.post();   // the Style Profile's pass over the whole painted frame (watercolour: pigment and edges)
 }
 function composite() {
   const c = outX;
@@ -124,7 +132,7 @@ window.renderSheet = async (times, cols = 3, w = 640, crop = null, at = null, ta
   }
   return { url: sc.toDataURL('image/jpeg', .9), ms };
 };
-window.gpuInfo = () => { const gl = drawingContext, e = gl.getExtension('WEBGL_debug_renderer_info'); return e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); };
+window.gpuInfo = () => { if (!GL) return 'Canvas 2D'; const gl = drawingContext, e = gl.getExtension('WEBGL_debug_renderer_info'); return e ? gl.getParameter(e.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER); };
 window.lengthOf = () => window.LOOP ? window.LOOP.len : DUR;
 
 // ---------- studio: scrub, or play along with the song ----------

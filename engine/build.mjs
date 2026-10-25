@@ -72,6 +72,7 @@ export function build(mvDir = '.', over = {}) {
   }
   MV.dir = rel(dir) || '.';
   const style = styleOf(MV.style);
+  MV.renderer = style.renderer || 'webgl';   // the canvas the profile paints on: 'webgl' or '2d' (frame.js)
   const scripts = [
     ...style.libraries,
     ...ENGINE.map(f => 'engine/' + f),

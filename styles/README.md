@@ -27,7 +27,7 @@ Two profiles that only paint the same picture with different texture look the sa
 
 A profile is a folder `styles/<name>/` with:
 
-- **`style.json`**: `description` (one line; the Brief offers it when asking for the style), `libraries` (scripts loaded before everything, e.g. p5), `fonts` (a stylesheet URL), `scripts` (the profile's own files, loaded after the engine), and `defaults`: mv.json settings the look needs, which an MV's own mv.json still overrides (`"boil": 0` so nothing boils, `"pixel": 6` for pixel's grid).
+- **`style.json`**: `description` (one line; the Brief offers it when asking for the style), `renderer` (the canvas the look paints on: `"webgl"`, p5's WEBGL, the default; or `"2d"`, a plain Canvas 2D the profile paints through `drawingContext`, for paths, gradients, soft shadows, blur and blend modes; p5's transforms and the camera apply to both), `libraries` (scripts loaded before everything, e.g. p5), `fonts` (a stylesheet URL), `scripts` (the profile's own files, loaded after the engine), and `defaults`: mv.json settings the look needs, which an MV's own mv.json still overrides (`"boil": 0` so nothing boils, `"pixel": 6` for pixel's grid).
 - **`STYLE.md`**: the rules of the medium and its drawing API, written for the model, with a "Signature features" list (what makes the look recognisable at a glance; the Style Sample Gate checks it) and a "What to check" list of what the look forbids. GUIDE.md sends the model here for the rules once the Brief has picked the style, and docs/review-loop.md for the checks. GUIDE.md and docs/ keep no rules of their own about the look; where they need an example, they use watercolour.
 - **Scripts** that define these globals, which the engine, the Characters and the Chapters all draw with:
 
@@ -41,11 +41,11 @@ A profile is a folder `styles/<name>/` with:
 | `STYLE.setup()` | async; runs once, after the canvas exists (brushes, paper, textures) |
 | `STYLE.underlay()` | draws what lies under every frame (paper), in frame units |
 | `STYLE.overlay(ctx, w, h)` | runs on the final 2D canvas after everything (grain, vignette) |
-| `STYLE.flush()` | makes everything painted so far land before p5 draws an image over it |
+| `STYLE.flush(img)` | makes everything painted so far land before the queued lettering (`img`, a canvas) is drawn over it. A profile that doesn't paint straight onto the canvas (an SVG scene) places `img` in its own picture and returns `true` |
 | `STYLE.letterFont(size)` | the CSS font for Sound Words |
 | `STYLE.fonts` | font family names to wait for before rendering |
 | `STYLE.karaoke.band(K)`, `.text(ctx, K)` | paint the karaoke band during the frame; letter it on the 2D canvas. `K` = `{ text, sub, a, b, grow, sung, top }` (see engine/karaoke.js). `sub` is the line's translation (song/translation.txt), lettered on a row above the sung words and never lit; `karaokeLayout(ctx, K, font, size)` works out where every row goes (`K.rows`, `K.subY`, `K.subSize`, `K.box`), so a profile only paints and letters |
-| `STYLE.post()` | optional: runs on the painted frame once it's done, before the lettering (watercolour's pigment pass, a `filter()` shader) |
+| `STYLE.post()` | optional, and may be async: runs on the painted frame once it's done, before the lettering (watercolour's pigment pass, a `filter()` shader; an SVG scene rasterised onto the canvas) |
 | `STYLE.pose(o)` | optional: takes every Character's pose and returns it the way the look moves (cut-out paper doesn't squash; cel squashes more) |
 
 Besides these, each profile keeps its own `tone(hex)`, which every colour going into its `paint()`, `inkLine()` and karaoke passes through, and reads the engine's `LIGHT` (frame.js: the way light travels, from the upper left unless a Shot or mv.json `"light"` says otherwise) wherever it shades.
