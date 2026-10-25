@@ -40,7 +40,7 @@ let head = [], ch = null, shot = null, inReads = false;
 for (const [n, line] of src.entries()) {
   const c = line.match(chapterRe);
   if (c) {
-    ch = { n: +c[1], name: c[2].trim(), sections: c[3].split('+').map(s => s.trim()), start: +c[4], end: +c[5], rest: c[6], shots: [], seamOut: null, lines: [line], at: n + 1 };
+    ch = { n: +c[1], name: c[2].trim(), sections: c[3].split(/\s*[+,]\s*/).map(s => s.trim()), start: +c[4], end: +c[5], rest: c[6], shots: [], seamOut: null, lines: [line], at: n + 1 };
     chapters.push(ch); shot = null; inReads = false; continue;
   }
   if (!ch) { head.push(line); continue; }
@@ -79,7 +79,7 @@ for (const [name, re, want] of compare) {
 }
 
 // Sound Words: what the header lists, and capitals in the Shots that look like lettering it doesn't
-const swField = (header.match(/Sound Words[^\n]*(?::|\n)([\s\S]*?)(?=\n(?:#{1,4}\s*)?(?:Lyric Reading|Open questions|Cast|Arc|World|Motifs?)\b|\n#|$)/i) || [, ''])[0];
+const swField = (header.match(/(?:^|\n)(?:#{1,4}\s*)?(?:\*\*)?Sound Words[^\n]*(?::|\n)([\s\S]*?)(?=\n(?:#{1,4}\s*)?(?:Lyric Reading|Open questions|Cast|Arc|World|Motifs?)\b|\n#|$)/i) || [, ''])[0];
 const listed = new Set();
 for (const m of swField.matchAll(/\*\*([^*]+)\*\*/g)) if (!/[a-z]/.test(m[1])) listed.add(m[1].replace(/[^\p{L}]/gu, ''));
 for (const m of swField.matchAll(/\b[A-Z]{2,}\b/g)) listed.add(m[0]);
@@ -166,7 +166,7 @@ for (const [s, [i, js]] of perShot) {
 const body = chapters.map(c => c.lines.join('\n')).join('\n');
 for (const w of listed) if (!body.includes(w)) warn(-1, `the Sound Word ${w} isn't placed in any Shot`);
 // the Lyric Reading covers every line, when it numbers them
-const reading = (header.match(/Lyric Reading[^\n]*(?::|\n)([\s\S]*?)(?=\n(?:#{1,4}\s*)?(?:Open questions|Chapters?)\b|\n#{1,2}\s|$)/i) || [, ''])[1];
+const reading = (header.match(/(?:^|\n)(?:#{1,4}\s*)?(?:\*\*)?Lyric Reading[^\n]*(?::|\n)([\s\S]*?)(?=\n(?:#{1,4}\s*)?(?:Open questions|Chapters?)\b|\n#{1,2}\s|$)/i) || [, ''])[1];
 const readL = new Set([...reading.matchAll(/\bL(\d+)(?:\s*[–-]\s*L?(\d+))?/g)].flatMap(m => { const a = +m[1], b = m[2] != null ? +m[2] : a; return Array.from({ length: Math.max(0, b - a + 1) }, (_, k) => a + k); }));
 if (readL.size) { const miss = LINES.map((_, j) => j).filter(j => !readL.has(j)); if (miss.length) warn(-1, `the Lyric Reading leaves out ${Lrange(miss)}`); }
 else if (reading.split('\n').filter(l => l.trim()).length < LINES.length) warn(-1, `the Lyric Reading has fewer lines than the song's ${LINES.length} Lyric Lines (number them L00, L01…)`);
