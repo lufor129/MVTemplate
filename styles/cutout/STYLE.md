@@ -3,7 +3,7 @@
 Paper cut-out animation: every shape is a piece of coloured paper cut with scissors, laid on kraft card, casting a small
 shadow on whatever lies under it. Shading is printed as halftone dots, light as tissue paper, lines as cut strips of dark
 paper. Nothing boils: pieces hold their cut shapes, like puppets moved under a camera. This file holds
-the rules of the medium and its drawing API; [GUIDE.md](../../GUIDE.md) holds everything that doesn't depend on the look.
+the rules of the medium and its drawing API; [GUIDE.md](../../GUIDE.md) and [docs/](../../docs/) hold everything that doesn't depend on the look.
 
 ## Signature features
 
@@ -31,7 +31,7 @@ What makes it read as cut-out at a glance. The Style Sample Gate checks these.
 
 ## What to check
 
-GUIDE.md's review loop sends you here. In every sheet and strip, look for:
+The review loop ([docs/review-loop.md](../../docs/review-loop.md)) sends you here. In every sheet and strip, look for:
 
 - pieces with no shadow, or shadows falling different ways in one shot
 - shapes that wobble or crawl between frames (jitter added on purpose, or a shape whose point count changes)

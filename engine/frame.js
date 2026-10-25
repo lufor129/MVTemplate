@@ -43,7 +43,7 @@ function toScreen(x, y, cam = CAM) {
 }
 
 // ---------- lettering (drawn on the 2D compositor, under the paper grain) ----------
-// Use sparingly: the only lettering inside the picture is a Sound Word (see GUIDE.md, "No text").
+// Use sparingly: the only lettering inside the picture is a Sound Word (see docs/rules.md, rule 2, "No text").
 let LETTERS = [];
 function letter(txt, x, y, size, color, o = {}) {
   if (CAM && !o.screen) { [x, y] = toScreen(x, y); size *= CAM.zoom; o = { ...o, rot: (o.rot || 0) + CAM.rot }; if (o.font) o.font = o.font.replace(/(\d+(\.\d+)?)px/, (m, v) => (v * CAM.zoom) + 'px'); }

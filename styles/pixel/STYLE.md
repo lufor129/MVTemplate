@@ -3,7 +3,7 @@
 Pixel art, like an old game: the frame is drawn as clean flat shapes, then cut into big square pixels (`MV.pixel`
 frame units each: 6 by default, 320×180 at 16:9), and every pixel snaps to a small palette, with ordered dithering
 where two colours blend. The karaoke is a game dialog box lettered in a pixel font. Nothing boils.
-This file holds the rules of the medium and its drawing API; [GUIDE.md](../../GUIDE.md) holds everything that
+This file holds the rules of the medium and its drawing API; [GUIDE.md](../../GUIDE.md) and [docs/](../../docs/) hold everything that
 doesn't depend on the look.
 
 ## Signature features
@@ -28,7 +28,7 @@ What makes it read as pixel art at a glance. The Style Sample Gate checks these.
 
 ## What to check
 
-GUIDE.md's review loop sends you here. Look at sheets at full size (`--w=1920`), where pixels are clear. Look for:
+The review loop ([docs/review-loop.md](../../docs/review-loop.md)) sends you here. Look at sheets at full size (`--w=1920`), where pixels are clear. Look for:
 
 - faces or props too small to read at the pixel size: make them bigger, or simpler
 - outlines broken into dots (a line weight under a pixel); dithering on a flat colour that should be one PAL entry

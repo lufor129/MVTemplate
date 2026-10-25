@@ -1,6 +1,6 @@
 # MVTemplate
 
-A template for making a hand-painted music video with Claude. Copy it once per MV, put a song and its lyrics in `song/`, and ask:
+A template for making a hand-painted music video with Claude. Make a copy of it for each MV with the song and its lyrics in it (`node tools/new_mv.mjs ../my-mv --song=<folder>`, or copy it by hand and put them in `song/`), and in the copy ask:
 
 > Read GUIDE.md, then make an MV for this song: a robot learning to dance.
 
@@ -34,6 +34,8 @@ uv sync --project tools/song
 ```bash
 uv run --project tools/song python tools/song/analyze.py song   # song/song.json
 node engine/render.mjs --songcheck                              # the Song Check video
+node engine/storyboard.mjs                                      # check mv/STORYBOARD.md against the song
+node engine/storyboard.mjs --briefs                             # the Chapter briefs for parallel subagents
 node engine/build.mjs && open studio.html                       # scrub or play along in Chrome
 node engine/render.mjs --rough                                  # the Rough Cut (and the Seam check)
 node engine/render.mjs --final                                  # the MV
@@ -47,11 +49,12 @@ Every render command takes `--mv=<folder>` for an MV kept elsewhere.
 
 | path | what it is |
 |---|---|
-| [GUIDE.md](GUIDE.md) | The workflow, the rules and the engine. Claude reads it first. |
+| [GUIDE.md](GUIDE.md) | The goals and the workflow, with its Gates. Claude reads it first, and the rest of `docs/` as each step needs it. |
+| [docs/](docs/) | The rules, the engine API, the review loop, the Chapter brief, new styles, publishing, the Harvest |
 | [GLOSSARY.md](GLOSSARY.md) | The words the guide and code use (MV, Song, Section, Chapter, Shot, Seam, Gate…) |
 | [docs/adr/](docs/adr/) | Why it's built this way |
 | `song/` | Your song and lyrics, and the analysis (`song.json`) |
-| `mv/` | Your MV: `mv.json` (format, style, karaoke), the storyboard, characters and chapters |
+| `mv/` | Your MV: `mv.json` (format, style, karaoke), the Log (`LOG.md`: steps passed, your decisions), the storyboard, characters and chapters |
 | [engine/](engine/) | Beat grid, timeline, karaoke, acting tools, build and render |
 | [styles/](styles/) | Style Profiles: how paint lands on the frame. [watercolor/](styles/watercolor/STYLE.md), [cel/](styles/cel/STYLE.md), [cutout/](styles/cutout/STYLE.md), [pixel/](styles/pixel/STYLE.md) |
 | [tools/song/](tools/song/) | The song analysis |

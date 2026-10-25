@@ -3,7 +3,7 @@
 Hand-drawn cel animation: every shape inked with a brush line, flat colour laid in a little off the line,
 and hard-edged shadow tones, on animation paper. It draws with plain p5 shapes (no p5.brush), so it
 renders several times faster than watercolour. This file holds the rules of the medium and its drawing API;
-[GUIDE.md](../../GUIDE.md) holds everything that doesn't depend on the look.
+[GUIDE.md](../../GUIDE.md) and [docs/](../../docs/) hold everything that doesn't depend on the look.
 
 ## Signature features
 
@@ -29,7 +29,7 @@ What makes it read as cel at a glance. The Style Sample Gate checks these.
 
 ## What to check
 
-GUIDE.md's review loop sends you here. In every sheet and strip, look for:
+The review loop ([docs/review-loop.md](../../docs/review-loop.md)) sends you here. In every sheet and strip, look for:
 
 - solid shapes with no ink line, or a line so thin it disappears at the shot's zoom
 - shading that looks like a gradient (many stacked fills) instead of one or two hard tones

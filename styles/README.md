@@ -28,7 +28,7 @@ Two profiles that only paint the same picture with different texture look the sa
 A profile is a folder `styles/<name>/` with:
 
 - **`style.json`**: `description` (one line; the Brief offers it when asking for the style), `libraries` (scripts loaded before everything, e.g. p5), `fonts` (a stylesheet URL), `scripts` (the profile's own files, loaded after the engine), and `defaults`: mv.json settings the look needs, which an MV's own mv.json still overrides (`"boil": 0` so nothing boils, `"pixel": 6` for pixel's grid).
-- **`STYLE.md`**: the rules of the medium and its drawing API, written for the model, with a "Signature features" list (what makes the look recognisable at a glance; the Style Sample Gate checks it) and a "What to check" list of what the look forbids. GUIDE.md sends the model here for the rules and from its review loop for the checks. GUIDE.md keeps no rules of its own about the look; where it needs an example, it uses watercolour.
+- **`STYLE.md`**: the rules of the medium and its drawing API, written for the model, with a "Signature features" list (what makes the look recognisable at a glance; the Style Sample Gate checks it) and a "What to check" list of what the look forbids. GUIDE.md sends the model here for the rules once the Brief has picked the style, and docs/review-loop.md for the checks. GUIDE.md and docs/ keep no rules of their own about the look; where they need an example, they use watercolour.
 - **Scripts** that define these globals, which the engine, the Characters and the Chapters all draw with:
 
 | global | what it is |
@@ -50,6 +50,6 @@ A profile is a folder `styles/<name>/` with:
 
 Besides these, each profile keeps its own `tone(hex)`, which every colour going into its `paint()`, `inkLine()` and karaoke passes through, and reads the engine's `LIGHT` (frame.js: the way light travels, from the upper left unless a Shot or mv.json `"light"` says otherwise) wherever it shades.
 
-Profiles drawn with plain p5 shapes share `shapes.js` (filled polygons, variable-width strokes, hatching, offsets, `glow()`); each keeps its own identical copy, so a profile folder stays self-contained. Start a new profile from the existing one closest to the look, show it off with the engine's `style-sample` loop and check it against the others with `engine/lineup.mjs` (GUIDE.md step 0).
+Profiles drawn with plain p5 shapes share `shapes.js` (filled polygons, variable-width strokes, hatching, offsets, `glow()`); each keeps its own identical copy, so a profile folder stays self-contained. Start a new profile from the existing one closest to the look, show it off with the engine's `style-sample` loop and check it against the others with `engine/lineup.mjs` ([docs/new-style.md](../docs/new-style.md)).
 
 The engine (geometry, boil, camera, timeline, acting, emotes) only calls these, so a new profile works with every Character and Chapter that keeps to them, though each Character's own colours and shapes were designed for one look.

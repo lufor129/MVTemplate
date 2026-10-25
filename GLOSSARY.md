@@ -26,6 +26,18 @@ _Avoid_: genre, type, template
 The written plan of the whole MV, before any picture: its idea, Characters, Chapters, and every Shot with what happens, what the viewer must take in and when, and how each Seam is crossed.
 _Avoid_: script, shot list, outline
 
+**Chapter brief**:
+What a Chapter subagent is given: the common brief (docs/chapter-brief.md) and its own `mv/briefs/cNN.md`, with its Shots, the exact contract for each Seam it shares and its Guests. Not the Brief, which is the person's.
+_Avoid_: task, prompt, spec
+
+**Log**:
+`mv/LOG.md`: the MV's memory, kept as it happens: which steps have passed, every decision the person made (and turned down), and the Harvest candidates, so any session can pick the MV up.
+_Avoid_: notes, journal, status
+
+**Harvest**:
+The last step: bringing what one MV taught (engine fixes, helpers, rules learned the hard way) back into the Template, item by item, as the person chooses.
+_Avoid_: backport, merge, upstream
+
 **Rough Cut**:
 The whole MV rendered small and choppy (half size, half frame rate) with the Song, to judge rhythm and sync before the final render.
 _Avoid_: preview, draft render, animatic
