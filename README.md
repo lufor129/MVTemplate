@@ -56,7 +56,7 @@ Every render command takes `--mv=<folder>` for an MV kept elsewhere.
 | `song/` | Your song and lyrics, and the analysis (`song.json`) |
 | `mv/` | Your MV: `mv.json` (format, style, karaoke), the Log (`LOG.md`: steps passed, your decisions), the storyboard, characters and chapters |
 | [engine/](engine/) | Beat grid, timeline, karaoke, acting tools, build and render |
-| [styles/](styles/) | Style Profiles: how paint lands on the frame. [watercolor/](styles/watercolor/STYLE.md), [cel/](styles/cel/STYLE.md), [cutout/](styles/cutout/STYLE.md), [pixel/](styles/pixel/STYLE.md) |
+| [styles/](styles/) | Style Profiles: how paint lands on the frame. [watercolor/](styles/watercolor/STYLE.md), [cel/](styles/cel/STYLE.md), [cutout/](styles/cutout/STYLE.md), [pixel/](styles/pixel/STYLE.md), [paper-theatre/](styles/paper-theatre/STYLE.md), [doodle/](styles/doodle/STYLE.md) |
 | [tools/song/](tools/song/) | The song analysis |
 | [tools/shorts/](tools/shorts/), [tools/publish/](tools/publish/) | A vertical short from the MV; its YouTube description |
 | [examples/clawd/](examples/clawd/) | Clawd, an example character with 31 emotions |

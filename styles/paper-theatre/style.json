@@ -1,0 +1,18 @@
+{
+  "name": "paper-theatre",
+  "description": "Paper theatre: a layered papercraft diorama filmed with a real camera: flat matte card pieces with soft rounded cut edges in separated layers, each casting one thin soft shadow, fine paper grain and gentle pencil shading, in a soft clean palette of powder blue, sage and leaf green, stone grey and red and mustard accents",
+  "renderer": "2d",
+  "libraries": [
+    "node_modules/p5/lib/p5.min.js"
+  ],
+  "fonts": "https://fonts.googleapis.com/css2?family=Baloo+2:wght@800&family=M+PLUS+Rounded+1c:wght@800&family=Chiron+GoRound+TC:wght@700&display=block",
+  "scripts": [
+    "palette.js",
+    "canvas.js",
+    "paint.js",
+    "transitions.js"
+  ],
+  "defaults": {
+    "boil": 0
+  }
+}

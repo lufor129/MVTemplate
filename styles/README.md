@@ -8,20 +8,22 @@ A Style Profile is one complete look: not only how paint lands on the frame (its
 | [cel/](cel/STYLE.md) | TV cel: bold brush ink that holds still, saturated flat colour, a hard shadow tone found from the light, broad acting | plain p5 shapes |
 | [cutout/](cutout/STYLE.md) | paper cut-out: muted fibrous paper cut in straight snips, no outlines, shadows, halftone; nothing boils or squashes | plain p5 shapes, textured |
 | [pixel/](pixel/STYLE.md) | pixel art: 320×180 grid, small palette, dithering, a dialog-box karaoke | plain p5 shapes, then a pixel grid |
+| [paper-theatre/](paper-theatre/STYLE.md) | paper theatre: matte card pieces with soft rounded cut edges laid in layers, one thin soft shadow each, powder blue and sage, no outlines | Canvas 2D |
+| [doodle/](doodle/STYLE.md) | notebook doodle: wobbly fineliner traced twice, markers scribbled along the tops of things, ballpoint hatching, the page left mostly white | SVG, rasterised onto a Canvas 2D |
 
 ## A look of its own
 
 Two profiles that only paint the same picture with different texture look the same from across the room. What tells a look at a glance is everything above the brush, so a profile decides all of it, for every Character and Chapter, without them changing:
 
-| at a glance | where the profile decides it | watercolor · cel · cutout · pixel |
+| at a glance | where the profile decides it | watercolor · cel · cutout · pixel · paper-theatre · doodle |
 |---|---|---|
-| colour and value | its `tone()`, which every colour going into `paint()` passes through | lifted and soft · saturated · muted and warm · snapped to the palette |
-| light and shade | its `paint()`, reading `LIGHT` | pigment pools at edges · a hard shadow side found from the light · halftone and shadows under pieces · dithering |
-| lines | its `paint()` and `inkLine()` | sepia, lost on the lit side · bold, still · none round a piece · one dark pixel |
-| edges and shapes | its `paint()` | soft, drifting · clean · straight scissor snips · stepped |
-| motion | `STYLE.pose` | as acted · squash and smears pushed · no squash, no smears · no smears |
-| lettering | `STYLE.karaoke`, `letterFont` | handwriting on a pale wash · rounded subtitle letters, no band · heavy serif on a paper strip · pixel font in a dialog box |
-| the whole frame | `STYLE.post`, `STYLE.overlay` | the pigment pass, paper grain · paper grain · paper fibre · the pixel grid |
+| colour and value | its `tone()`, which every colour going into `paint()` passes through | lifted and soft · saturated · muted and warm · snapped to the palette · soft and matte, no cast · light marker colours |
+| light and shade | its `paint()`, reading `LIGHT` | pigment pools at edges · a hard shadow side found from the light · halftone and shadows under pieces · dithering · one thin soft shadow under each piece, pencil shading at its edges · a second marker layer on the shadow side, ballpoint for darks |
+| lines | its `paint()` and `inkLine()` | sepia, lost on the lit side · bold, still · none round a piece · one dark pixel · none; printed lines for details only · black fineliner traced twice, running past the corners |
+| edges and shapes | its `paint()` | soft, drifting · clean · straight scissor snips · stepped · rounded die-cut card with a pale cut edge · scribbled, never flat |
+| motion | `STYLE.pose` | as acted · squash and smears pushed · no squash, no smears · no smears · stiff card: little squash or smear · a touch more squash, motion marks in the air |
+| lettering | `STYLE.karaoke`, `letterFont` | handwriting on a pale wash · rounded subtitle letters, no band · heavy serif on a paper strip · pixel font in a dialog box · rounded print on a cream card · ballpoint on washi tape, highlighter on the sung part |
+| the whole frame | `STYLE.post`, `STYLE.overlay` | the pigment pass, paper grain · paper grain · paper fibre · the pixel grid · paper grain · ruled notebook paper, red margin, punched holes |
 
 `node engine/lineup.mjs` renders one moment of the `style-sample` loop in every profile, small, side by side (`out/check/style_lineup.jpg`). A new profile has to be told from the others there; one that can't isn't a look of its own yet.
 
@@ -50,6 +52,6 @@ A profile is a folder `styles/<name>/` with:
 
 Besides these, each profile keeps its own `tone(hex)`, which every colour going into its `paint()`, `inkLine()` and karaoke passes through, and reads the engine's `LIGHT` (frame.js: the way light travels, from the upper left unless a Shot or mv.json `"light"` says otherwise) wherever it shades.
 
-Profiles drawn with plain p5 shapes share `shapes.js` (filled polygons, variable-width strokes, hatching, offsets, `glow()`); each keeps its own identical copy, so a profile folder stays self-contained. Start a new profile from the existing one closest to the look, show it off with the engine's `style-sample` loop and check it against the others with `engine/lineup.mjs` ([docs/new-style.md](../docs/new-style.md)).
+Profiles drawn with plain p5 shapes share `shapes.js` (filled polygons, variable-width strokes, hatching, offsets, `glow()`), and profiles painted on a Canvas 2D share `canvas.js` (paths, gradients, `_with()` for alpha, blend modes, blur, soft shadows and clips, variable-width strokes, offscreen layers); each keeps its own identical copy, so a profile folder stays self-contained. Start a new profile from the existing one closest to the look, show it off with the engine's `style-sample` loop and check it against the others with `engine/lineup.mjs` ([docs/new-style.md](../docs/new-style.md)).
 
 The engine (geometry, boil, camera, timeline, acting, emotes) only calls these, so a new profile works with every Character and Chapter that keeps to them, though each Character's own colours and shapes were designed for one look.

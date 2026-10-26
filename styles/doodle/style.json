@@ -1,0 +1,19 @@
+{
+  "name": "doodle",
+  "description": "A doodle in a lined school notebook: wobbly black fineliner traced twice with overshooting corners, a few felt-tip markers scribbled along the tops of things, highlighter yellows, ballpoint cross-hatching, most of the page left white; built as SVG",
+  "renderer": "2d",
+  "libraries": [
+    "node_modules/p5/lib/p5.min.js"
+  ],
+  "fonts": "https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Patrick+Hand&family=LXGW+WenKai+TC:wght@400;700&display=block",
+  "scripts": [
+    "palette.js",
+    "canvas.js",
+    "svg.js",
+    "paint.js",
+    "transitions.js"
+  ],
+  "defaults": {
+    "boil": 0
+  }
+}
