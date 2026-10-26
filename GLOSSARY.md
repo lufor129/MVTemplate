@@ -11,7 +11,7 @@ One music video, made from one copy of this template, driven by one Song. A vide
 _Avoid_: project, clip, film
 
 **Gate**:
-A point where making the MV stops until the person approves what is there. There are five: the Song Check, the Storyboard, the Leads' Model Sheets (skipped when the MV has no Leads), the first Chapter and the Rough Cut, plus a Style Sample first when the MV needs a new Style Profile.
+A point where making the MV stops until the person approves what is there. There are five: the Song Check, the Storyboard, the Leads' Model Sheets (skipped when the MV has no Leads), the first Chapter and the Rough Cut, plus a Style Target and a Style Sample first when the MV needs a new Style Profile.
 _Avoid_: checkpoint, review step, milestone
 
 **Brief**:
@@ -125,3 +125,7 @@ _Avoid_: animation helpers, moves
 **Style Profile**:
 One complete look: its drawing primitives and palette, and how it tones every colour, shades with the light, draws lines, moves Characters and letters the karaoke, with its rules of what the look forbids.
 _Avoid_: theme, skin, renderer
+
+**Style Target**:
+The picture of a new look, made with an image model (or picked from the person's references) and approved by the person before any of its Style Profile is written; the profile is coded toward it and keeps it as `target.jpg`.
+_Avoid_: mood board, concept art, reference

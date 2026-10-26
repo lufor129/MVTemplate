@@ -31,6 +31,7 @@ A profile is a folder `styles/<name>/` with:
 
 - **`style.json`**: `description` (one line; the Brief offers it when asking for the style), `renderer` (the canvas the look paints on: `"webgl"`, p5's WEBGL, the default; or `"2d"`, a plain Canvas 2D the profile paints through `drawingContext`, for paths, gradients, soft shadows, blur and blend modes; p5's transforms and the camera apply to both), `libraries` (scripts loaded before everything, e.g. p5), `fonts` (a stylesheet URL), `scripts` (the profile's own files, loaded after the engine), and `defaults`: mv.json settings the look needs, which an MV's own mv.json still overrides (`"boil": 0` so nothing boils, `"pixel": 6` for pixel's grid).
 - **`STYLE.md`**: the rules of the medium and its drawing API, written for the model, with a "Signature features" list (what makes the look recognisable at a glance; the Style Sample Gate checks it) and a "What to check" list of what the look forbids. GUIDE.md sends the model here for the rules once the Brief has picked the style, and docs/review-loop.md for the checks. GUIDE.md and docs/ keep no rules of their own about the look; where they need an example, they use watercolour.
+- **`target.jpg`** (profiles made since the Style Target Gate): the picture of the look the person approved before any code, which the profile was coded toward ([docs/new-style.md](../docs/new-style.md)).
 - **Scripts** that define these globals, which the engine, the Characters and the Chapters all draw with:
 
 | global | what it is |

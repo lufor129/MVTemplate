@@ -5,6 +5,7 @@ This MV's memory (GUIDE.md › The workflow): the steps, every decision the pers
 ## Steps
 
 - [ ] 0 Brief (mv/mv.json)
+- [ ] 0 Style Target (only with a new style)
 - [ ] 0 Style Sample (only with a new style)
 - [ ] 1 Song Check
 - [ ] 2 Storyboard

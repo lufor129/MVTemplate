@@ -49,7 +49,7 @@ You then go through these steps in order. At each 🚦 **Gate**, stop: show the 
 
 | # | step | makes | Gate |
 |---|---|---|---|
-| 0 | The Brief, and a new Style Profile if one is asked for | `mv/mv.json`, `styles/<name>/` | 🚦 Style Sample (only with a new style) |
+| 0 | The Brief, and a new Style Profile if one is asked for | `mv/mv.json`, `styles/<name>/` | 🚦 Style Target, 🚦 Style Sample (only with a new style) |
 | 1 | Analyse the Song | `song/song.json`, `out/check/songcheck.mp4` | 🚦 Song Check |
 | 2 | Lyric Reading, then the Storyboard | `mv/STORYBOARD.md` | 🚦 Storyboard |
 | 3 | Build the Leads (if any) | `mv/characters/*.js`, their Model Sheets | 🚦 Model Sheets (only with Leads) |
@@ -81,9 +81,11 @@ The sentence says what the MV is about; settle what it leaves open before anythi
 
 Also ask whether they have references (a character to reuse, photos, colours, an MV they love). Put any files in `mv/refs/` and look at them. Write the answers into `mv/mv.json` (`title`, `mode`, `format`, `karaoke`, `style`) and the Log. Now read the Style Profile's STYLE.md.
 
-**A new style.** If the person asked for a look no Style Profile has, make one in this MV's copy before going on, as [docs/new-style.md](docs/new-style.md) describes, and render its Style Sample.
+**A new style.** If the person asked for a look no Style Profile has, make one in this MV's copy before going on, as [docs/new-style.md](docs/new-style.md) describes: first a target image of the look, then the profile, coded toward it, then its Style Sample.
 
-🚦 **Style Sample.** Show the person the sheet and ask whether this is the look. Revise it until they approve. If it turns out well, note it in the Log as a Harvest candidate so the next MV can pick it.
+🚦 **Style Target.** Show the person the target image (several side by side, small, when they're choosing between looks) and ask whether this is the look. Make it again until they approve; write none of the profile before that.
+
+🚦 **Style Sample.** Show the person the sheet, with the target over the render (`out/check/vs_target.jpg`), and ask whether this is the look. Revise it until they approve. If it turns out well, note it in the Log as a Harvest candidate so the next MV can pick it.
 
 ### 1. Analyse the Song
 
