@@ -86,6 +86,11 @@ function flushLetters() {
   push(); resetMatrix(); _origin(); image(letG, 0, 0); pop();
 }
 
+// ---------- asking without drawing ----------
+// dry(f) runs f() far off the canvas and returns what it returned: for a helper that only says where things are by
+// drawing them (a dance that returns its poses), when a Shot needs the answer before it draws. It takes as long as drawing.
+function dry(f) { push(); translate(100000, 0); const r = f(); pop(); return r; }
+
 // ---------- clips that nest ----------
 // clipInside(pts, f) draws f() inside the closed outline pts (in the current frame): a mirror, a lens, a booth window,
 // the detail inside a Character's hair. p5 keeps one clip at a time on WEBGL (a second one, like the one a shaded

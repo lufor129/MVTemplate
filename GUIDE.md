@@ -205,6 +205,8 @@ Each subagent gets the common brief, [docs/chapter-brief.md](docs/chapter-brief.
 
 A subagent that stops at the usage limit keeps what it has written: when the limit resets, send it a message (SendMessage, by its name) to carry on, rather than starting a new one. Many running at once tend to reach the limit together.
 
+**Long jobs.** Before a render or anything else that takes minutes, tell the person about how long it will take (time a few frames: the log prints ms/frame), so they don't have to ask. Wait for a job by what it writes (the line in its log, the finished file), with a time limit. Don't wait on `pgrep -f <name>`: it also matches the shell running the wait, so the wait never ends.
+
 When a subagent reports, put what it found wrong in shared files and what it had to work around in the Log, as Harvest candidates. When they're all done, check every Seam between Chapters yourself, as the final will show it:
 
 ```bash

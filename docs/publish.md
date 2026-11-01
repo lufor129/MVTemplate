@@ -8,7 +8,7 @@ GUIDE.md step 8. When the person wants to post the MV, ask which of these they n
   python3 tools/shorts/make_short.py --mv=<dir> --from=2 --to=34.5 --name=open --title="BIG LINE|smaller line"
   ```
 
-  A 16:9 MV becomes its picture in the middle of a 9:16 frame over a blurred copy of itself, the title above and the lyric below in the Style Profile's fonts and colours, each word lighting up as it is sung → `out/shorts/<name>_9x16.mp4`. A 9:16 MV is cut as it is.
+  A cut inside a sung line moves out to take the whole line in, and the tool prints the times it used (`--exact` keeps yours). A 16:9 MV becomes its picture in the middle of a 9:16 frame over a blurred copy of itself, the title above and the lyric below in the Style Profile's fonts and colours, each word lighting up as it is sung → `out/shorts/<name>_9x16.mp4`. A 9:16 MV is cut as it is.
 - **The cover** (the YouTube thumbnail, 1280 × 720): a still of the picture without its karaoke, with the title lettered on it in the Style Profile's fonts over a dark band, or bare:
 
   ```bash

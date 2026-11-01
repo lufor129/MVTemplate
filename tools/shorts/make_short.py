@@ -9,6 +9,8 @@
 # fonts and colours: the translation (song/translation.txt) on top, then the sung line, each word lighting up as it
 # is sung. Everything stays clear of the apps' captions and buttons (the bottom quarter and the right edge).
 # A 9:16 MV: the stretch is rendered as it is, karaoke and all.
+# A cut that would land inside a sung line, or close enough for the fade to eat its first or last word, moves out to take
+# the whole line in, and says so; --exact keeps the times as given.
 # Both fade in and out, picture and sound. Writes <mv>/out/shorts/<name>_9x16.mp4.
 #
 # Text is lettered with PIL into PNGs that ffmpeg overlays, never with ffmpeg's drawtext (many ffmpeg builds lack it).
@@ -26,6 +28,7 @@ ap.add_argument('--from', dest='a', type=float, required=True, help='start, in s
 ap.add_argument('--to', dest='b', type=float, required=True, help='end, in song seconds')
 ap.add_argument('--name', default='short', help='output name: out/shorts/<name>_9x16.mp4')
 ap.add_argument('--title', help='the lettering over the picture; "|" splits a big line from a smaller one')
+ap.add_argument('--exact', action='store_true', help='keep --from and --to as given, even inside a sung line')
 ap.add_argument('--no-render', action='store_true', help='reuse out/shorts/<name>_raw.mp4 from a previous run')
 o = ap.parse_args()
 
@@ -34,7 +37,21 @@ OUT = MV_DIR / 'out' / 'shorts'; OUT.mkdir(parents=True, exist_ok=True)
 MV = json.loads((MV_DIR / 'mv' / 'mv.json').read_text()) if (MV_DIR / 'mv' / 'mv.json').exists() else {}
 STYLE = MV.get('style', 'watercolor')
 FPS, W, H = int(MV.get('fps', 24)), 1080, 1920
+
+def on_the_lyric(a, b, lines, end, lead=.3, tail=.6):
+    """(a, b) moved out so no sung line is cut or faded: lead and tail are about the length of the fades below."""
+    for i, l in enumerate(lines):
+        if l['start'] - lead < a < l['end']:
+            a = max(l['start'] - lead, lines[i - 1]['end'] if i else 0, 0)
+        if l['start'] < b < l['end'] + tail:
+            b = min(l['end'] + tail, lines[i + 1]['start'] if i + 1 < len(lines) else end, end)
+    return a, b
+
 A, B = o.a, o.b
+if not o.exact and (MV_DIR / 'song' / 'song.json').exists():
+    _song = json.loads((MV_DIR / 'song' / 'song.json').read_text())
+    A, B = on_the_lyric(A, B, _song.get('lines', []), _song.get('duration', B))
+    if (A, B) != (o.a, o.b): print(f'moved the cut onto the lyric: {o.a:.2f}–{o.b:.2f} → {A:.2f}–{B:.2f} (--exact keeps your times)')
 DUR = B - A
 raw, out = OUT / f'{o.name}_raw.mp4', OUT / f'{o.name}_9x16.mp4'
 

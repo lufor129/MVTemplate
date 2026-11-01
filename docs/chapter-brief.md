@@ -35,5 +35,8 @@ You are building one Chapter of a music video, in parallel mode. Other subagents
 ## Review loop (budget)
 Use docs/review-loop.md and actually look at every image with the Read tool. Once a neighbour's Chapter exists, check your shared edge as the final will show it: `node engine/render.mjs --mv=<mv> --seams --edge=<your chapter() name> --out=<mv>/out/check/cNN_seams.jpg` (only your edges, into your own image). At least: one contact sheet per Shot; a strip for every key motion and every Seam (each Shot boundary, and the first and last 0.5 s of the Chapter, which must meet your Seam contracts exactly); a crop for every Guest's face and every face that carries the story. Fix what you find and look again. Name every check image with your Chapter's prefix (`c04_…`) under `<mv>/out/check/`. Keep frames under ~1.5 s each. At most one render process at a time from you.
 
+## Long renders
+Stay in your turn until a render is done and you've looked at it: a background command doesn't reliably wake you, and a subagent that goes idle reports nothing. Run renders in the foreground, and cut a long one into ranges that fit the tool's time limit.
+
 ## When you're done
 Reply with: the Shot list with final times; what each Seam does and how you checked it; the Sound Words used; the CAST entries you added (signature and options); any changes from the Storyboard and why; shared-file bugs; what you had to work around that the template could do for the next MV; what you couldn't make work; the paths of 2–3 check images that best show the Chapter.

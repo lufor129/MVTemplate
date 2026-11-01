@@ -100,6 +100,7 @@ The API every Character and Chapter is written against. Read it before the first
 ## Plates, props and clips
 
 - **Plates:** pictures painted outside the engine (GPT Image, in the Style Profile's look) go in `mv/plates/` (backgrounds) and `mv/props/` (props that sit still or move only as a whole), as png, jpg or webp. They load before the first frame. `plate(name, { x, y, w, over, src, alpha })` draws a plate under the camera, covering the frame by default (`over` 1.1 times, so a drifting camera shows no edge); `SPRITES[name]` is a prop's image, for `image()`. Coded Characters stand in front of them.
+- **Asking without drawing:** `dry(f)` runs `f()` far off the canvas and returns what it returned, for a shared helper that only reports where things are by drawing them: `const D = dry(() => revueDance(t, x, y, u, o));`. It takes as long as drawing, so call it once a frame.
 - **Clips that nest:** `clipInside(pts, f)` draws `f()` inside the closed outline `pts`: a mirror, a lens, a booth window, the detail inside a hair outline. On WEBGL p5 keeps one clip at a time (a shaded cel `paint()` makes one), so `clipInside` gives every clip opened inside it its own bit of the stencil: shaded shapes, Characters and further `clipInside`s all work in it. cel's `clipTo(pts, f, k)` is the same with a smoothed outline.
 
 ## Characters
