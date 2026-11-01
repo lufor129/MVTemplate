@@ -49,7 +49,7 @@ You then go through these steps in order. At each 🚦 **Gate**, stop: show the 
 
 | # | step | makes | Gate |
 |---|---|---|---|
-| 0 | The Brief, and a new Style Profile if one is asked for | `mv/mv.json`, `styles/<name>/` | 🚦 Style Target, 🚦 Style Sample (only with a new style) |
+| 0 | The Brief, and a new Style Profile if one is asked for | `mv/mv.json`, `styles/<name>/` | 🚦 Style Target (a new style, or when asked), 🚦 Style Sample (only with a new style) |
 | 1 | Analyse the Song | `song/song.json`, `out/check/songcheck.mp4` | 🚦 Song Check |
 | 2 | Lyric Reading, then the Storyboard | `mv/STORYBOARD.md` | 🚦 Storyboard |
 | 3 | Build the Leads (if any) | `mv/characters/*.js`, their Model Sheets | 🚦 Model Sheets (only with Leads) |
@@ -57,7 +57,7 @@ You then go through these steps in order. At each 🚦 **Gate**, stop: show the 
 | 5 | The other Chapters, in parallel | `mv/chapters/*.js` | — |
 | 6 | The Rough Cut | `out/rough/rough.mp4` | 🚦 Rough Cut (or your own review, when the person handed it over) |
 | 7 | The final render | `out/final/<title>.mp4` | — |
-| 8 | Publish (when the person wants to post it) | `out/shorts/*_9x16.mp4`, `out/publish/description.txt` | — |
+| 8 | Publish (when the person wants to post it) | `out/shorts/*_9x16.mp4`, `out/publish/description.txt`, `out/publish/thumb_*.jpg` | — |
 | 9 | Harvest: what this MV taught, back into the template | a branch of the template | each item is the person's call |
 
 **The Log.** `mv/LOG.md` is the MV's memory: the steps as a checklist, every decision the person makes (and what they turned down), and the Harvest candidates. Read it before anything else when you pick an MV up, put its checklist in your task list, and write to it as things happen, not at the end: tick a step when its Gate passes, note a decision with the date and, where it matters, the person's own words, and note anything the template could learn the moment you find it (a fix to a shared file, a helper two Chapters both wanted, a rule learned the hard way). A new session should be able to carry on from the Log and the files alone.
@@ -83,6 +83,8 @@ Also ask whether they have references (a character to reuse, photos, colours, an
 
 **A new style.** If the person asked for a look no Style Profile has, make one in this MV's copy before going on, as [docs/new-style.md](docs/new-style.md) describes: first a target image of the look, then the profile, coded toward it, then its Style Sample.
 
+**An existing style, aligned first.** Even with a profile that's already there, offer a target image of this MV's world in it before the Song Check (docs/new-style.md › An existing profile): people have asked to see the look before anything is built. Its STYLE.md may have choices to show side by side there (cel: clean lines or the brush line).
+
 🚦 **Style Target.** Show the person the target image (several side by side, small, when they're choosing between looks) and ask whether this is the look. Make it again until they approve; write none of the profile before that.
 
 🚦 **Style Sample.** Show the person the sheet, with the target over the render (`out/check/vs_target.jpg`), and ask whether this is the look. Revise it until they approve. If it turns out well, note it in the Log as a Harvest candidate so the next MV can pick it.
@@ -100,7 +102,7 @@ The analysis separates the vocals, places each line with Whisper, re-times it by
 
 On a sung vocal (a generated one above all) Whisper can skip a whole stretch, or hear words nobody sings ("see you next time"), and a prompt doesn't fix it. So wherever lyric lines fail to match, the analysis hears that stretch again in chunks of at most 8 s and keeps the first try in `song/.analysis/asr.orig.json` (`--no-rescue` skips this). The beat tracker, for its part, can put a bar start in a stop-time break or on a pickup: the analysis lists every bar without the usual number of beats, and the Song Check draws those in red.
 
-🚦 **Song Check.** Give the person `out/check/songcheck.mp4`: the song with a click on every beat (higher on bar starts), the Section name, a disc that flashes on each beat, a strip of lines and beats, and the karaoke lighting up word by word. Low-confidence lines show in red. Ask them to check that the clicks sit on the beat, the high click on each bar start (listen hardest at the red bars), the words light up as they're sung, the Sections change where the song does, and the tempo feels right (a beat tracker can lock onto half, double or 1.5× the felt tempo). Fix what they report by editing `song/song.json` by hand (a line's `start`, `end` and `tokens`; a Section's `start`/`end`; or the beat lists), then render the Song Check again. Don't re-run the analysis after hand edits: it would overwrite them; note each hand fix in the Log.
+🚦 **Song Check.** Give the person `out/check/songcheck.mp4`: the song with a click on every beat (higher on bar starts), the Section name, a disc that flashes on each beat, a strip of lines and beats, and the karaoke lighting up word by word. Low-confidence lines show in red. Ask them to check that the clicks sit on the beat, the high click on each bar start (listen hardest at the red bars), the words light up as they're sung, the Sections change where the song does, and the tempo feels right (a beat tracker can lock onto half, double or 1.5× the felt tempo). Fix what they report in `song/hand_fixes.py` (copy it from `tools/song/hand_fixes.py` the first time): one fix per report (`set_words()` re-times a line's words as heard on the vocal stem, `squeeze()` fits a line into new edges, `shift()`, `section()`, or the beat lists), then run it (`python3 song/hand_fixes.py`) and render the Song Check again. It rewrites `song.json` from the analysis's own output, `song.auto.json`, so a re-run of the analysis keeps the fixes (analyze.py runs it again itself); a line fixed by hand gets confidence .9 and `"hand": true`, and stops showing red. Note each fix in the Log.
 
 ### 2. Lyric Reading, then the Storyboard
 
@@ -139,6 +141,7 @@ Structure:
 - **Every Seam gets a transition** chosen for it here, Chapter edges included. Nothing is added automatically.
 - Repeated Sections (choruses) should rhyme: the same setting or motif, escalating each time.
 - Times come from `song.json`: Shot starts on line starts or beats, big changes on bar starts.
+- No dead black (docs/rules.md, rule 5): no Shot holds on pure black for more than a beat while the song plays, the Intro included.
 
 As you write each Shot, think what it needs to look refined, and how it continues the one before.
 
@@ -164,17 +167,23 @@ node engine/render.mjs --loop=<name>-sheet --sheet=0.3,1.05,2.6 --cols=1 --w=160
 
 Look at the sheet yourself first: every view on model, every emotion readable at a glance and different from the others (by face, or by body and colour for a Character without one), the turn steps through the views, the emotion changes act (squint, take, settle). A small sheet hides detail: to show how refined a Lead is, add loops of your own (a big turnaround, the face close up through its emotions) and show those too.
 
+**Everything the Storyboard asks of it, before the Gate.** Read every Shot the Lead is in and give it all of it now: the leg poses (sit, kneel, crouch, bend, spread: the Contract's names), the hand props and where its hands are (`handAt`, `hands`, and which arm is near in each view), the grips. A Lead that only walks when five Chapters ask it to kneel costs every one of those Chapters a workaround. Show them on a loop of your own beside the Model Sheet.
+
+**Several Leads at once.** Build each in its own workspace copy when subagents build them: a folder with the MV's `engine/`, `styles/`, `song/` and `mv/` (without `out/` and `mv/refs/`; `node_modules` symlinked), because every render rebuilds one `.build/mv.js` from all of `mv/characters/`, and one agent's half-written file would break the others' renders. Give them one brief file with what they share: the scale (each Lead's height in u against the others), the line weight, the naming, the review commands. Copy each finished Lead back into the MV.
+
 🚦 **Model Sheets.** Show the person each Lead's sheet. Guests don't need this Gate: the Chapter that introduces a Guest designs it.
 
 ### 4. Shared pieces and the first Chapter
 
 Build what several Chapters share (the palette in mv.json, recurring props, sets the choruses return to) in `mv/characters/` (any shared script there loads before the Chapters), then the first Chapter, Shot by Shot, using the review loop. This Chapter sets the look for the rest: scale of the Characters, density of the backgrounds, the camera's energy, the pace of the reads.
 
+Make the shared pieces a small API the Chapter briefs can cite by signature: the set as functions with options (`stage(o)`, `curtain({ open, sway })`, `flats(o)`), the effects (`houseDark(k, holes)`, `confetti(t, o)`, a whip), and, for choruses that replay one picture escalated, one staging helper they all call with only what changes (the band's players `'play' | 'empty' | 'gone'`, the lights, the dip). Every interactive set piece gives its points, not just an x (`STAGE.cordAt(t)` → `[x, y]`), so no Chapter reads a set's internals. Finish these, and the shared Guests and props, before the Chapter subagents start, or freeze their headers (signatures and options) first: a shared file that changes while Chapters are being built costs every one of them rework.
+
 🚦 **First Chapter.** Render it as a clip with the song (`node engine/render.mjs --clip=<start>:<end>`) and show the person. Besides approving it, offer to carry the rest yourself: the other Chapters with N subagents at once (step 5, N for this machine), your own review of the Rough Cut instead of its Gate, then the final render, reporting at the end. Many people hand it over here. If they do, still stop for anything only they can decide.
 
 ### 5. The other Chapters, in parallel
 
-For a short MV, build the remaining Chapters yourself, in order. For a long one, use subagents. Each renders in its own headless Chrome, so the machine sets how many run at once: about one per CPU core less one, fewer if memory runs short (`sysctl -n hw.ncpu hw.memsize` on a Mac, `nproc` and `free -g` on Linux); nine ran well on a 10-core Mac with 16 GB. Start a new one whenever one finishes.
+For a short MV, build the remaining Chapters yourself, in order. For a long one, use subagents. A Chapter that repeats another (a second chorus that replays the first's staging) starts after the original's first pass, or both call one shared staging helper: built at once, the repeat rebuilds whatever the original changes on the way. Each renders in its own headless Chrome, so the machine sets how many run at once: about one per CPU core less one, fewer if memory runs short (`sysctl -n hw.ncpu hw.memsize` on a Mac, `nproc` and `free -g` on Linux); nine ran well on a 10-core Mac with 16 GB. Start a new one whenever one finishes.
 
 Before the first one starts, move anything two Chapters will both draw (a troupe of background dancers, a set the choruses return to) into `mv/characters/`, and the transitions too: a Seam two Chapters share is drawn by one helper there (a whip smear, swinging doors, a cloud of steam, in the MV's own world), so both sides draw the same thing. Then write the Chapter briefs:
 
@@ -190,7 +199,7 @@ Each subagent gets the common brief, [docs/chapter-brief.md](docs/chapter-brief.
   - a camera state: "rolled +0.35 rad and solid red at the edge"; "zoom z = 1 − .06·k², ending at .94";
   - a held tableau: the earlier Chapter writes the exact positions, scales and camera formula in a comment block `SEAM OUT TO CHAPTER n` at the top of its file, and the later one, started after it, copies them.
 
-  A contract that meets on a full cover (a flash, a solid wipe, black) must be reached by the earlier Chapter's last drawing and still be there at the later one's first; say so in both Chapter briefs (on twos the last drawing comes early: docs/engine.md › Time and motion).
+  A contract that meets on a full cover (a flash, a solid wipe, black) must be reached by the earlier Chapter's last drawing and still be there at the later one's first; say so in both Chapter briefs (on twos the last drawing comes early: docs/engine.md › Time and motion). Under a full cover nothing of the later Chapter shows yet: its lights (a cone from an out-of-shot lamp) and its overlays start from 0 there and come up after it breaks.
 - **the shared helpers it uses**, by name and signature, and anything the MV does its own way (plates, a second Lead, the karaoke's height).
 - **Guests:** a Guest a later Chapter brings back (a curtain call, a callback) goes on `CAST` as `CAST.<name> = (x, y, s, t, o) => …`, standing on (x, y), with `s` on the Lead's size scale. Its subagent reports the signature and options. A Chapter that uses several Guests starts after the Chapters that define them.
 
@@ -202,7 +211,7 @@ When a subagent reports, put what it found wrong in shared files and what it had
 node engine/render.mjs --seams     # → out/check/seams.jpg: each Chapter edge, the drawings the viewer sees on either side
 ```
 
-It flags (⚠) a full cover no frame shows (the earlier Chapter reaches it after its last drawing, or the later one has left it by its first) and (•) a jump across the edge much bigger than the motion around it, which is fine only where the Storyboard asks for a cut, a flash or a smash. Fix what doesn't join.
+It flags (⚠) a full cover no frame shows (the earlier Chapter reaches it after its last drawing, or the later one has left it by its first) and (•) a jump across the edge much bigger than the motion around it, which is fine only where the Storyboard asks for a cut, a flash or a smash: where its `[Seam out …]` says one of those, the jump is marked ✓ as asked for. Fix what doesn't join. A Chapter subagent checks only its own edges, into its own image: `--seams --edge=<its chapter() name> --out=out/check/cNN_seams.jpg`.
 
 ### 6. The Rough Cut
 
@@ -224,7 +233,7 @@ node engine/render.mjs --final --workers=3     # full size, mv.json fps, with th
 
 ### 8. Publish
 
-When the person wants to post the MV, follow [docs/publish.md](docs/publish.md): a vertical short, and the YouTube description.
+When the person wants to post the MV, follow [docs/publish.md](docs/publish.md): a vertical short, the cover, and the YouTube description.
 
 ### 9. Harvest
 

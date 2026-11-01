@@ -8,7 +8,9 @@
 // Body-local coordinates in the front view, used by the o.draw / o.armL / o.armR hooks:
 //   body x -5u..5u, y -8u..-2u; eye centres (±2.5u, -6u), each 1u wide and 2u tall; mouth near (0, -4.3u); legs reach y 0.
 //   Arms pivot at (±4.9u, -4.5u) and are 2.2u long. o.armL / o.armR are called at the arm TIP in arm space (x runs
-//   outward along the arm), so a held prop just draws around (0, 0).
+//   outward along the arm), so a held prop just draws around (0, 0); their third argument says whether that frame is
+//   mirrored on screen (for textUpright). clawd.handAt() says where a tip is, clawd.reach() aims one (aL / aR).
+//   The near arm (drawn over the body): L in the q, side and qback views; in front and back both arms sit behind it.
 //
 // Clawd's own pose fields, beyond the standard ones (engine/acting.js):
 //   view:   front | q | side | qback | back
@@ -16,7 +18,7 @@
 //           lines), lid 0..1 (lunchbox mouth, front view only), seed (blink timing)
 //   body:   sx, sy, noLegs, noShadow, swMul (outline weight)
 //   colour: col / dk / lt, or tint (pale, flush, blue, rosy, green, gold, or any hex) + tintK
-//   extras: hat, draw(u, sw), armL(u, sw), armR(u, sw)
+//   extras: hat, draw(u, sw), armL(u, sw, m), armR(u, sw, m)
 
 // ---------- views ----------
 // Turns are drawn KEY VIEWS, like a cartoon model sheet, never a rotated 3D box. Every view faces screen-right;
@@ -79,11 +81,11 @@ function drawClawd(x, y, u, o) {
     if (dir === 0) {   // side view: the near arm reaches forward past the front edge; a raises it, a < 0 lowers it
       translate(0, .3 * u); rotate(.7 - a);
       paint(rectPts(-.2 * u, -.45 * u, 2.3 * u, .9 * u, J * .6), { wash: col, washOp: 255, fill: dk, fillOp: 60, tex: .5, ink: PAL.ink, sw: sw * .8 });
-      if (hook) { translate(2.1 * u, 0); hook(u, sw); }
+      if (hook) { translate(2.1 * u, 0); hook(u, sw, !!o.flip); }
     } else {
       rotate(dir < 0 ? a : -a);
       paint(rectPts(dir < 0 ? -2.2 * u : 0, -.5 * u, 2.2 * u, u, J * .6), { wash: layer === 2 ? mixCol(col, dk, .4) : col, washOp: 255, fill: dk, fillOp: 60, tex: .5, ink: PAL.ink, sw: sw * .8 });
-      if (hook) { translate(dir * 2.2 * u, 0); if (dir < 0) scale(-1, 1); hook(u, sw); }
+      if (hook) { translate(dir * 2.2 * u, 0); if (dir < 0) scale(-1, 1); hook(u, sw, !!o.flip !== dir < 0); }
     }
     pop();
   };
@@ -444,6 +446,18 @@ const EMO = {
 };
 
 
+// Where an arm's tip is in the world, through the same moves drawClawd makes (the Character Contract's handAt)
+function clawdHandAt(x, y, u, o, side) {
+  const V = VIEWS[o.view] || VIEWS.front, A = V.arms.find(a => a[2] === side); if (!A) return null;
+  const [px, dir] = A, a = side === 'L' ? (o.aL ?? .2) : (o.aR ?? .2), sq = (o.sq || 0) + (o.take || 0), sm = clamp(o.smear || 0);
+  const sx = (o.flip ? -1 : 1) * (o.sx ?? 1) * (1 + sq * .6) * (1 + sm * .35), sy = (o.sy ?? 1) * (1 - sq), r = o.rot || 0;
+  let ry = -4.5 * u, th, len; const rx = (px + dir * .55 * clamp((Math.abs(a) - .7) / .9)) * u;
+  if (dir === 0) { ry += .3 * u; th = .7 - a; len = 2.1 * u; } else { th = dir < 0 ? a : -a; len = dir * 2.2 * u; }
+  const X = (rx + len * Math.cos(th)) * sx, Y = (ry + len * Math.sin(th)) * sy, DX = Math.sign(len) * Math.cos(th) * sx, DY = Math.sign(len) * Math.sin(th) * sy;
+  return { p: [x + (o.dx || 0) * u + X * Math.cos(r) - Y * Math.sin(r), y + (o.dy || 0) * u + X * Math.sin(r) + Y * Math.cos(r)],
+           ang: Math.atan2(DX * Math.sin(r) + DY * Math.cos(r), DX * Math.cos(r) - DY * Math.sin(r)) };
+}
+
 const clawd = character({
   name: 'clawd',
   size: [10, 8],
@@ -457,6 +471,9 @@ const clawd = character({
     return { col: mixCol(a.col, b.col, k), dk: mixCol(a.dk, b.dk, k), lt: mixCol(a.lt, b.lt, k), tint: null };
   },
   draw: drawClawd,
+  handAt: clawdHandAt,
+  hands: { L: ['aL'], R: ['aR'] },
+  near: { front: null, q: 'L', side: 'L', qback: 'L', back: null },
   // emotes sit by the top corner of the body, or over the hat
   emoteAt(x, y, u, o, top) {
     const V = VIEWS[o.view] || VIEWS.front, dir = o.flip ? -1 : 1, dy = (o.dy || 0) * u, sq = (o.sq || 0) + (o.take || 0);

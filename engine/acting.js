@@ -14,6 +14,14 @@
 //   mix(prev, cur, k)        optional: any other fields to blend across a change (colours); returns them
 //   draw(x, y, u, pose)      paints one frame of it: (x, y) is the ground point under it, u its size unit
 //   emoteAt(x, y, u, pose, top) optional: where a popped emote sits; top = it's one that goes over the head
+//   handAt(x, y, u, pose, side, tip)  optional: where hand side ('L' | 'R') holds a prop, in the world, or with tip its
+//              pointing fingertip: { p: [x, y], ang } (ang: the forearm's direction), null when that arm isn't drawn
+//              in this view. Chapters ask it (ch.handAt) instead of copying the rig's arm formula.
+//   hands      optional { L: [field, …], R: [field, …] }: the pose fields that place each hand (hand targets such as
+//              ['hLx', 'hLy'], or one raise, ['aL']). With handAt, ch.reach() aims a hand at a world point.
+//   near       optional { view: 'L' | 'R' | null }: the arm drawn in front of the body in each view (facing right; a
+//              flip mirrors the whole drawing, so it stays the same arm). The far arm goes behind the body, so a reach
+//              toward someone in that view hides it: reach with the near one. List it in the file's header too.
 //
 // Pose fields every Character should take (a Character ignores what doesn't apply to it):
 //   dx, dy (in u; −dy = up), sq (squash; negative stretches), rot, flip, view, smear 0..1 + smearDir ±1 (0 = both),
@@ -22,8 +30,16 @@
 // Two more are optional, but a Character that can sit or hold a prop takes them under these names, so every Chapter
 // asks for them the same way (list them in the file's header, with the seat height):
 //   sit 0..1      seated: the hips drop to a seat (0 standing, 1 sitting; in between, sitting down)
-//   held(u, sw)   draws a prop held against the body (a banjo, a ledger), in body-local units: over the body, under
+//   held(u, sw, m)  draws a prop held against the body (a banjo, a ledger), in body-local units: over the body, under
 //                 the hands in front of it
+// And the leg poses Storyboards keep asking for, under these names (everything above the hips comes down with them,
+// hand targets included). Give a Lead every one its Storyboard asks for before the Chapter subagents start (GUIDE.md
+// step 3), and show them on a loop beside its Model Sheet:
+//   kneel 0..1    down on one knee        crouch 0..1   a deep squat (a sprinter at the line)
+//   bend 0..1     the knees buckle under a weight      spread 0..1   a wide stance
+// Props a Character draws at its hands (Clawd's armL / armR, a rig's handL / handR) and held() take as their last
+// argument m, whether their frame is mirrored on screen (the pose's flip, and any mirroring of that arm): lettering on
+// a prop goes through textUpright(m, x, y, f) (frame.js), so a flag or a sign doesn't read backwards.
 //
 // The Character is a function, ch(x, y, u, pose), with the Acting Tools on it:
 //   ch.feel(name, t, over)       one emotion, alive at t: face and body together
@@ -32,6 +48,10 @@
 //   ch.spin(a)                   the key view (and flip) for heading a
 //   ch.stroll(t, t0, t1, x0, x1, u)   an eased walk from x0 to x1
 //   ch.dance(style, t, seed)     beat-locked dance offsets (see move())
+//   ch.handAt(x, y, u, pose, side, tip)      the spec's handAt, through the Style Profile's pose (as drawn)
+//   ch.reach(x, y, u, pose, side, [wx, wy], tip)  the pose fields (spec.hands[side]) that bring that hand's grip, or
+//                                with tip its fingertip, to a world point: a finger on a nose, a fist on a cord
+//   ch.near(view)                which arm is in front in that view (spec.near)
 // Poses compose by spreading; later spreads win, and fields both set (dy, sq) should be added:
 //   clawd(x, y, 24, { ...clawd.feel('happy', t), ...clawd.turn(t, 1, 1.2, 0, .25), hat: 'party' })
 
@@ -56,9 +76,47 @@ function character(spec) {
   ch.stroll = (t, t0, t1, x0, x1, u) => { const s = stroll(t, t0, t1, x0, x1, u); return { ...s, view: s.moving ? spec.views[Math.min(1, spec.views.length - 1)] : spec.views[0] }; };
   ch.dance = (style, t, seed = 0) => move(style, t, seed, ch.spin);
   ch.dancer = (x, y, u, style, t, extra = {}) => ch(x, y, u, { ...ch.dance(style, t, extra.seed || 0), ...extra });
+  ch.handAt = (x, y, u, o, side, tip) => spec.handAt ? spec.handAt(x, y, u, STYLE.pose ? STYLE.pose(o) : o, side, tip) : null;
+  ch.reach = (x, y, u, o, side, g, tip) => reachFor(ch, x, y, u, o, side, g, tip);
+  ch.near = view => (spec.near && spec.near[view]) ?? null;
   LOOPS[spec.name + '-sheet'] = modelSheet(ch);
   LOOPS[spec.name + '-sheet'].len = 4;
   return ch;
+}
+// ch.reach: nudges the hand's pose fields and follows how ch.handAt moves (damped Gauss-Newton, halving a step that
+// makes it worse), so it works for any rig that gives handAt. It starts from the pose's own values, and again from
+// a few spread around them when that doesn't land (a rig's limits can trap one start); a point out of reach gets the
+// hand as close as it goes.
+function reachFor(ch, x, y, u, o, side, g, tip) {
+  const spec = ch.spec, F = spec.hands && spec.hands[side];
+  if (!F || !spec.handAt) throw new Error(`${spec.name}: ch.reach needs spec.hands and spec.handAt`);
+  const pose = v => ({ ...o, ...Object.fromEntries(F.map((f, i) => [f, v[i]])) });
+  const at = v => { const h = ch.handAt(x, y, u, pose(v), side, tip); return h && h.p; };
+  const err = p => Math.hypot(g[0] - p[0], g[1] - p[1]), n = F.length, good = .02 * u;
+  const solve = v => {
+    let p = at(v); if (!p) return null;
+    for (let it = 0; it < 12 && err(p) > good; it++) {
+      const r = [g[0] - p[0], g[1] - p[1]], e = 1e-3;
+      const J = F.map((_, i) => { const w = v.slice(); w[i] += e; const q = at(w) || p; return [(q[0] - p[0]) / e, (q[1] - p[1]) / e]; });
+      const A = J.map(a => J.map(b => a[0] * b[0] + a[1] * b[1])), b = J.map(a => a[0] * r[0] + a[1] * r[1]);
+      const lam = 1e-4 * A.reduce((s, row, i) => s + row[i], 0) + 1e-9;
+      A.forEach((row, i) => { row[i] += lam; });
+      // solve A d = b (n is 1 or 2, rarely more: plain elimination)
+      for (let i = 0; i < n; i++) for (let j = i + 1; j < n; j++) { const f = A[j][i] / A[i][i]; for (let k = i; k < n; k++) A[j][k] -= f * A[i][k]; b[j] -= f * b[i]; }
+      const d = Array(n).fill(0); for (let i = n - 1; i >= 0; i--) { let s = b[i]; for (let k = i + 1; k < n; k++) s -= A[i][k] * d[k]; d[i] = s / A[i][i]; }
+      let step = 1, w, q;
+      for (let h = 0; h < 6; h++, step /= 2) { w = v.map((x, i) => x + d[i] * step); q = at(w); if (q && err(q) < err(p)) break; }
+      if (!q || err(q) >= err(p)) break;
+      v = w; p = q;
+    }
+    return { v, e: err(p) };
+  };
+  const v0 = F.map(f => o[f] ?? (spec.rest && spec.rest[f]) ?? 0);
+  let best = solve(v0); if (!best) return {};
+  for (let i = 0; i < n && best.e > good; i++) for (const d of [-2, -1, 1, 2]) {
+    const w = v0.slice(); w[i] += d; const s = solve(w); if (s && s.e < best.e - 1e-6) best = s;
+  }
+  return Object.fromEntries(F.map((f, i) => [f, best.v[i]]));
 }
 function _emoteAt(spec, x, y, u, o, top) {
   const [w, h] = spec.size, dir = o.flip ? -1 : 1, dy = (o.dy || 0) * u, sq = o.sq || 0;
@@ -139,6 +197,20 @@ function take(t, t0, amt = 1) {
 function stroll(t, t0, t1, x0, x1, u) {
   const x = lerp(x0, x1, ease(seg(t, t0, t1))), d = Math.abs(x - x0) / (4 * u), moving = t > t0 && t < t1;
   return { x, walk: d, flip: x1 < x0, dy: moving ? -Math.abs(Math.sin(d * Math.PI)) * .5 : 0, moving };
+}
+
+// Stop-time: on each hit the whole picture freezes for o.hold seconds (.22), with a snap zoom and a colour flash.
+// Returns { t, k, zoom, wash }: draw the scene at `t` (the hit's time while frozen, else the real t); k is the last
+// hit (-1 before the first); zoom (0..1) snaps in over o.snap (.07 s, two frames) on the hit, holds through the
+// freeze and eases out over o.out (.2 s): lerp the camera toward that hit's close-up by it; wash (1 → 0 over o.flash,
+// .11 s) is the flash's strength. When the freeze ends the action carries on from the real t (it skips the held
+// time), so it stays on the music. Keep sounds and the karaoke on the real t.
+function stopTime(t, hits, o = {}) {
+  const hold = o.hold ?? .22, snap = o.snap ?? .07, out = o.out ?? .2, fl = o.flash ?? .11;
+  let k = -1; hits.forEach((h, i) => { if (t >= h) k = i; });
+  if (k < 0) return { t, k, zoom: 0, wash: 0 };
+  const a = t - hits[k];
+  return { t: a < hold ? hits[k] : t, k, zoom: a < hold ? Math.min(1, a / snap) : 1 - ease(seg(a, hold, hold + out)), wash: a < fl ? 1 - a / fl : 0 };
 }
 
 // ---------- dances ----------

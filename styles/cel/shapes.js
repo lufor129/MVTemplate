@@ -111,5 +111,9 @@ function glow(x, y, r, col = '#FFC766', a = 1) {
   const [cr, cg, cb] = _rgba(col);
   push(); blendMode(ADD); tint(cr, cg, cb, 150 * clamp(a)); image(_glowTex, x - r, y - r, 2 * r, 2 * r); noTint(); blendMode(BLEND); pop();
 }
+// clipTo(pts, f, k): draws f() inside the outline pts, smoothed as paint()'s curv does (k, .28 by default): the fringe,
+// shine and strands inside a Character's hair in every view, the room through a window. It nests (engine/frame.js
+// clipInside), so a shaded paint() or a Character drawn inside it keeps its own clips.
+function clipTo(pts, f, k = .28) { clipInside(_smooth(pts, k), f); }
 // A seeded generator for textures made once in setup.
 function _lcg(seed) { let s = seed; return () => (s = (s * 16807) % 2147483647) / 2147483647; }

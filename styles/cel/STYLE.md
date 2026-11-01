@@ -9,7 +9,7 @@ renders several times faster than watercolour. This file holds the rules of the 
 
 What makes it read as cel at a glance. The Style Sample Gate checks these.
 
-- **Bold** ink lines, thick and thin like a pressed brush, a little irregular, and **still**: style.json sets `boil: 0`, so each line is drawn once and holds. (People found a boiling line distracting. An MV that wants the boil back sets `"boil": 12` in mv.json, and `"boilAmp"` below 1 to make it gentler.)
+- **Bold** ink lines, thick and thin like a pressed brush, a little irregular, and **still**: style.json sets `boil: 0`, so each line is drawn once and holds. (People found a boiling line distracting. An MV that wants the boil back sets `"boil": 12` in mv.json, and `"boilAmp"` below 1 to make it gentler.) **Clean lines:** `"boilAmp": 0, "inkSwell": 0, "offRegister": 0` in mv.json give an even line that doesn't wander, with the colour on it: one person found the brush line too hand-drawn ("歪歪扭扭") and chose this, so show both at the Style Target. `inkSwell` (1) is how much a line swells thick and thin, `offRegister` (1) how far the colour sits off it; values between keep a little of each.
 - **Saturated flat colour** in every shape, printed a couple of pixels off its line, like hand colouring.
 - **A hard shadow side on every solid shape**, found from the light: one flat tone, darker and nudged toward red-violet (skin goes rosy, not grey), never a gradient; big shapes get a thin lit edge too.
 - **Broad acting**: squash, stretch and smears pushed further than the Character asks (`STYLE.pose`).
@@ -54,6 +54,7 @@ The review loop ([docs/review-loop.md](../../docs/review-loop.md)) sends you her
 
 - **Lines:** `inkLine(pts, sw, colour, brush = 'ink', curvature)`, tapered at both ends. Brushes: `'ink'`, `'inkfine'`, `'dry'` (broken, bristly), `'2B'`, `'HB'`, `'charcoal'`, `'marker'`, `'pen'`, `'rotring'`, `'cpencil'`, `'spray'`: the same names as watercolour, so Characters move between the two.
 - **Shapes** (engine/geometry.js): `rectPts`, `ellPts`, `rrPts`, `starPts`, `heartPts`, `through(P)`, `ribbon(P, w0, w1)`.
+- **Inside an outline:** `clipTo(pts, f, k = .28)` draws `f()` inside the outline, smoothed like `curv`: a fringe and shine kept inside the hair in every view, a face behind a window. It nests, so shaded shapes and Characters inside it keep their shadow sides and their own clips.
 - **Light:** `glow(x, y, r, colour, a)`. Draw it before the things that sit in front of the light.
 - **Palette** `PAL`: `paper, ink, clay, clayDk, clayLt, night, indigo, rose, ochre, sap, teal, violet, cream, sky`, a little brighter than watercolour's, plus the MV's own. `mixCol(a, b, k)` mixes two hex colours.
 

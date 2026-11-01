@@ -71,6 +71,9 @@ function drawLetters(c) {
     c.restore();
   }
 }
+// Words painted on a prop (a flag, a sign) read backwards when the frame they're drawn in is mirrored (a prop in the
+// hand of a Character facing left): textUpright(m, x, y, f) draws f() about (x, y), mirrored back when m is true.
+function textUpright(m, x, y, f) { push(); translate(x, y); if (m) scale(-1, 1); f(); pop(); }
 // Paint the queued lettering into the scene itself, so later layers (wipes) cover it. drawWorld calls this after each
 // shot; call it yourself before a wipe or iris if the shot has lettering, or the letters will sit on top of it.
 let letG = null;
@@ -83,11 +86,57 @@ function flushLetters() {
   push(); resetMatrix(); _origin(); image(letG, 0, 0); pop();
 }
 
+// ---------- clips that nest ----------
+// clipInside(pts, f) draws f() inside the closed outline pts (in the current frame): a mirror, a lens, a booth window,
+// the detail inside a Character's hair. p5 keeps one clip at a time on WEBGL (a second one, like the one a shaded
+// cel paint() makes, wipes the first), so while f runs each clip opened inside it takes the next bit of the stencil
+// and is cut inside the ones already open: a nested clipInside, a shaded paint(), a Character's own clips. Canvas 2D
+// clips nest by themselves. It hooks p5 2.3.3's clip internals: check it after a p5 update.
+function clipInside(pts, f) {
+  const R = GL && typeof p5 !== 'undefined' && p5.instance && p5.instance._renderer, gl = R && R.GL, I = clipInside;
+  // p5 sends the mask's triangles after endClip(), so it would also land on the frame: draw it all but transparent
+  push(); beginClip(); noStroke(); fill(0, 0, 0, .5); beginShape(); for (const [x, y] of pts) vertex(x, y); endShape(CLOSE); endClip();
+  if (I.n || !gl || !R._clearClip || !R._internalEnable) { f(); pop(); return; }   // 2D, or nested: the hooks below are on
+  const set = () => { gl.stencilMask(0xff); gl.stencilOp(gl.KEEP, gl.KEEP, gl.KEEP); gl.stencilFunc(gl.EQUAL, I.ref, I.mask); };
+  I.n = 1; I.ref = 1; I.mask = 1; set();
+  R._applyClip = function () {
+    const b = 1 << I.n; gl.stencilMask(b); gl.clearStencil(0); gl.clear(gl.STENCIL_BUFFER_BIT);
+    R._internalEnable.call(gl, gl.STENCIL_TEST); this._stencilTestOn = true;
+    gl.stencilFunc(gl.ALWAYS, b, 0xff); gl.stencilOp(gl.KEEP, gl.KEEP, gl.REPLACE); gl.disable(gl.DEPTH_TEST);
+  };
+  R._unapplyClip = function () { const b = 1 << I.n; I.mask |= b; if (!this._clipInvert) I.ref |= b; I.n++; set(); gl.enable(gl.DEPTH_TEST); };
+  R._clearClip = function () {   // a clip opened inside f ends: drop its bit, ours stay on
+    I.n--; const b = 1 << I.n; I.mask &= ~b; I.ref &= ~b;
+    gl.stencilMask(b); gl.clearStencil(0); gl.clear(gl.STENCIL_BUFFER_BIT); set(); if (this._clipDepths.length) this._clipDepths.pop();
+  };
+  try { f(); } finally { delete R._applyClip; delete R._unapplyClip; delete R._clearClip; I.n = 0; gl.stencilMask(0xff); }
+  pop();
+}
+
+// ---------- plates and sprites ----------
+// A plate is a painted background (mv/plates/<name>.png|jpg|webp, made with GPT Image in the Style Profile's look),
+// loaded once at setup. plate(name, o) draws it in world units, under the active camera, behind what's drawn after it.
+// By default it covers the frame, centred, `o.over` (1.1) times larger so the camera can drift without showing an edge;
+// o.x, o.y move its centre, o.w sets its width (the height keeps its aspect), o.src = [sx, sy, sw, sh] draws only that
+// part of the image (in its own pixels), o.alpha fades it. SPRITES holds mv/props/*: painted props, drawn with image().
+const PLATES = {}, SPRITES = {};
+function plate(name, o = {}) {
+  const img = PLATES[name]; if (!img) throw new Error(`plate: no mv/plates/${name}.*`);
+  const [, , sw, sh] = o.src || [0, 0, img.width, img.height], ar = sw / sh;
+  const w = o.w ?? Math.max(W, H * ar) * (o.over ?? 1.1), h = w / ar;
+  STYLE.flush();
+  push(); imageMode(CENTER); if (o.alpha != null) tint(255, 255 * o.alpha);
+  if (o.src) image(img, o.x ?? W / 2, o.y ?? H / 2, w, h, ...o.src); else image(img, o.x ?? W / 2, o.y ?? H / 2, w, h);
+  pop();
+}
+
 // ---------- frame ----------
 let T = 0, outC = null, outX = null;
 async function setup() {
   createCanvas(W * RS, H * RS, GL ? WEBGL : P2D); pixelDensity(1); noLoop();
   await STYLE.setup();
+  for (const [k, p] of Object.entries(MV.plates || {})) PLATES[k] = await loadImage(p);
+  for (const [k, p] of Object.entries(MV.sprites || {})) SPRITES[k] = await loadImage(p);
   letG = createGraphics(W * RS, H * RS); letG.pixelDensity(1);
   outC = document.getElementById('out'); outC.width = W * RS; outC.height = H * RS; outX = outC.getContext('2d');
   const sample = 'AaBb為我畫一首小小的歌' + SONG.lines.map(l => l.text + (l.sub || '')).join('');

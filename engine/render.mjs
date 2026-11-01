@@ -6,8 +6,9 @@
 //     node engine/render.mjs --loop=clawd-sheet --sheet=1 --cols=1 --w=1920 --out=…   a Model Sheet as a still
 //     node engine/render.mjs --rough [--workers=3]               the Rough Cut: half size, 12 fps, with the song → out/rough/rough.mp4
 //     node engine/render.mjs --final [--workers=3]               the MV: full size, mv.json fps, with the song → out/final/<title>.mp4
-//     node engine/render.mjs --seams                             every Chapter edge as the viewer sees it → out/check/seams.jpg
-//                                                                (--rough runs it too, when its frames are done)
+//     node engine/render.mjs --seams [--edge=<chapter>,…] [--out=…]   every Chapter edge as the viewer sees it → out/check/seams.jpg
+//                                                                (--edge: only the edges into or out of those Chapters, or at those
+//                                                                times; --rough runs it too, when its frames are done)
 //   Look at it (open the images with the Read tool):
 //     --sheet=0.5,1,1.5,2 [--cols=4] [--w=480] --out=out/check/a.jpg          contact sheet of chosen times
 //     --strip=2.0:2.5 [--cols=6] [--w=320] --out=out/check/strip.jpg          EVERY frame in a stretch (motion)
@@ -24,7 +25,7 @@
 //   --rough and --final are resumable: frames already on disk are kept (delete the frames folder to start over).
 import puppeteer from 'puppeteer-core';
 import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, existsSync, statSync, renameSync, readdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync, existsSync, statSync, renameSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { homedir } from 'node:os';
@@ -83,7 +84,7 @@ async function openPage(tag = '') {
   const page = await browser.newPage();
   page.on('console', m => { if (['error', 'warn'].includes(m.type())) console.log(`[page${tag}]`, m.text()); });
   page.on('pageerror', e => console.log(`[page error${tag}]`, e.message));
-  await page.goto(pathToFileURL(join(ROOT, 'studio.html')).href + `?render&scale=${scale}`, { waitUntil: 'networkidle0' });
+  await page.goto(pathToFileURL(join(ROOT, 'studio.html')).href + `?render&scale=${scale}`, { waitUntil: 'networkidle0', timeout: 180000 });   // Google Fonts can be slow
   await page.waitForFunction('window.ready === true', { timeout: 120000 });
   if (args.loop) {
     const ok = await page.evaluate(name => { if (!LOOPS[name]) return false; window.LOOP = LOOPS[name]; return true; }, args.loop);
@@ -106,14 +107,16 @@ const lengthOf = page => page.evaluate(() => window.lengthOf());
 //     reaches it after its last drawing (on twos that's at END − hold/fps), or the later one has already left it by
 //     its first. The viewer sees a partly covered frame jump to the other Chapter.
 //   • the picture jumps across the edge far more than it moves on either side: a hard cut, fine only where the
-//     Storyboard asks for one.
-// Writes out/check/seams.jpg and prints one line per edge.
-async function seamCheck(page, out) {
-  const r = await page.evaluate(async () => {
+//     Storyboard asks for one. Where its [Seam out …] mark says cut, flash or smash, the jump is marked as asked for.
+// Writes out/check/seams.jpg and prints one line per edge. `only` keeps the edges into or out of the Chapters it names
+// (their names in chapter()), or at the times it gives, so a Chapter's builder checks its own edges alone.
+async function seamCheck(page, out, only = null) {
+  const r = await page.evaluate(async only => {
     const F = MV.fps, Hd = Math.max(1, MV.hold || 1), q = i => Math.floor(i / Hd + 1e-6) * Hd / F;   // a frame's drawing, as draw() picks it
     const sm = document.createElement('canvas'); sm.width = 192; sm.height = 108; const sx = sm.getContext('2d', { willReadFrequently: true });
     const cw = 384, chh = 216, edges = [];
     for (let i = 0; i + 1 < CH.length; i++) if (Math.abs(CH[i].end - CH[i + 1].start) < 1e-3) edges.push([CH[i].name, CH[i + 1].name, CH[i + 1].start]);
+    if (only) edges.splice(0, edges.length, ...edges.filter(([A, B, E]) => only.some(o => o === A || o === B || Math.abs(+o - E) < .1)));
     const sheet = document.createElement('canvas'); sheet.width = cw * 5; sheet.height = Math.max(1, edges.length) * chh; const c = sheet.getContext('2d');
     const shot = async (t, cell, row, label, raw) => {
       const hold = MV.hold; if (raw) MV.hold = 1;
@@ -148,17 +151,30 @@ async function seamCheck(page, out) {
         lateA: cover && diff(a1, aE) > Math.max(4, 1.5 * mA), earlyB: cover && diff(b0, bE) > Math.max(4, 1.5 * mB) });
     }
     return { url: sheet.toDataURL('image/jpeg', .88), rows, hold: Hd, fps: F };
-  });
-  if (!r.rows.length) { console.log('seams: no two Chapters meet yet'); return; }
+  }, only);
+  if (!r.rows.length) { console.log(only ? `seams: no edge into or out of ${only.join(', ')}` : 'seams: no two Chapters meet yet'); return; }
+  const marks = seamMarks();
   mkdirSync(dirname(out), { recursive: true }); writeFileSync(out, Buffer.from(r.url.slice(r.url.indexOf(',') + 1), 'base64'));
   console.log(`seams (${r.fps} fps, hold ${r.hold}) → ${out}\n  jump = how much the picture changes across the edge, move = on either side (mean |Δ| of 0..255)`);
   for (const e of r.rows) {
     const note = [];
     if (e.lateA) note.push(`⚠ ${e.A} reaches the full cover after its last drawing shown (${e.tA.toFixed(3)}): reach it by END − hold/fps`);
     if (e.earlyB) note.push(`⚠ ${e.B} has already left the full cover by its first drawing shown (${e.tB.toFixed(3)}): hold it until then`);
-    if (!note.length && e.jump > 1.8 * e.move + 3) note.push('• a jump across the edge: fine only where the Storyboard asks for a cut, a flash or a smash');
+    const asked = marks.find(m => Math.abs(m.at - e.E) < .2 && /\b(cut|flash|smash)/i.test(m.text));
+    if (!note.length && e.jump > 1.8 * e.move + 3) note.push(asked ? `✓ a jump the Storyboard asks for: ${asked.text.slice(0, 90)}` : '• a jump across the edge: fine only where the Storyboard asks for a cut, a flash or a smash');
     console.log(`  ${e.E.toFixed(3)}  ${e.A} → ${e.B}  jump ${e.jump.toFixed(1)}  move ${e.move.toFixed(1)}  ${note.join('; ') || 'ok'}`);
   }
+}
+
+// The Storyboard's [Seam out …] marks, each at the end time of its Chapter (the form GUIDE.md step 2 gives)
+function seamMarks() {
+  const p = join(MVDIR, 'mv', 'STORYBOARD.md'), marks = []; if (!existsSync(p)) return marks;
+  let end = null;
+  for (const line of readFileSync(p, 'utf8').split('\n')) {
+    const c = line.match(/^#*\s*Chapter\s+\d+\s*·[^·]+·[^·]+·\s*\d+(?:\.\d+)?\s*[–-]\s*(\d+(?:\.\d+)?)/); if (c) end = +c[1];
+    const m = line.match(/\[Seam out([^\]]*)\]?/i); if (m && end != null) marks.push({ at: end, text: m[1].replace(/^\s*(to Chapter \d+|of the MV)\s*:?\s*/i, '') });
+  }
+  return marks;
 }
 
 // Parallel and resumable: each worker pulls the next missing frame; files are written atomically.
@@ -213,7 +229,7 @@ if (args.sheet || args.strip) {
   }));
   console.log(`${n} frames → ${out}  (${((Date.now() - start) / n).toFixed(0)} ms/frame)`);
 } else if (args.seams) {
-  await seamCheck(await openPage(), at(typeof args.seams === 'string' ? args.seams : join(OUT, 'check', 'seams.jpg')));
+  await seamCheck(await openPage(), at(args.out || (typeof args.seams === 'string' ? args.seams : join(OUT, 'check', 'seams.jpg'))), args.edge ? String(args.edge).split(',') : null);
 } else if (mode === 'rough' || mode === 'final') {
   const [a, b] = args.range ? span(args.range) : [0, undefined], fdir = join(OUT, mode, 'frames');
   await frames(fdir, a, b, +(args.workers || 3));

@@ -2,6 +2,10 @@
 // and variable-width ink lines that boil, on animation paper. See STYLE.md for the rules of the look.
 
 const INK_W = 5.6;   // stroke width in frame units per unit of `sw`: a bold line, the cel's signature
+// mv.json "inkSwell": how much a line swells thick and thin along its length (1 = the pressed brush, 0 = an even
+// line); "offRegister": how far the colour is printed off the line (1 = the profile's own, 0 = on the line). With
+// "boilAmp": 0 (no wandering edges) they give a clean line instead of a hand-drawn one.
+const INK_SWELL = MV.inkSwell ?? 1, OFF_REG = MV.offRegister ?? 1;
 // A shadow tone the way a cel painter mixes one: darker, a little richer, its hue nudged toward red-violet (skin goes
 // rosy, not grey); a lit edge goes toward warm white.
 const _shaded = new Map();
@@ -46,7 +50,7 @@ function _ink(P, sw, col, br, closed) {
   const S = _resample(P, Math.max(5, w * 1.6), closed).map(([x, y]) => [x + jit(w * .14), y + jit(w * .14)]);
   if (S.length < 2) return;
   const n = S.length, taper = Math.min(n / 3, 4);
-  const width = i => w * (.78 + .3 * Math.sin(i * .55 + ph)) * (closed ? 1 : clamp(Math.min(i + .6, n - .4 - i) / taper, .35, 1));
+  const width = i => w * (.78 + INK_SWELL * .3 * Math.sin(i * .55 + ph)) * (closed ? 1 : clamp(Math.min(i + .6, n - .4 - i) / taper, .35, 1));
   if (!broken) return _stroke(S, width, col, ba, closed);
   for (let i = 0; i < S.length - 1; i++) if (random() > broken) _stroke([S[i], S[i + 1]], width, col, ba, false);
 }
@@ -59,7 +63,7 @@ function paint(pts, o = {}) {
   if (!pts || pts.length < 2) return;
   const P = o.curv ? _smooth(pts, o.curv) : pts;
   if (o.wash) {   // printed a little off the line, like hand colouring
-    const dx = 1.6 + jit(.6), dy = 1.2 + jit(.6), Q = P.map(([x, y]) => [x + dx, y + dy]), col = tone(o.wash), a = (o.washOp ?? 255) / 255;
+    const dx = (1.6 + jit(.6)) * OFF_REG, dy = (1.2 + jit(.6)) * OFF_REG, Q = P.map(([x, y]) => [x + dx, y + dy]), col = tone(o.wash), a = (o.washOp ?? 255) / 255;
     _fillPoly(Q, col, a);
     if (a > .9 && o.shade !== false) _shade(Q, col, a, typeof o.shade === 'number' ? o.shade : 1);
   }

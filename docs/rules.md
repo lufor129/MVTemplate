@@ -44,6 +44,7 @@ You know what happens because you wrote the code. The viewer doesn't: they see i
 ## 5. Alive
 
 - **Nothing is ever still.** Every emotion has its own idle motion, cameras drift or push, backgrounds stir, and the Style Profile's texture moves (watercolour: the linework boils). A frozen frame reads as a bug. But nothing jitters: a still thing changes only on boil frames (give each its own `boilSeed()`).
+- **No dead black.** While the song plays, nothing holds on pure black (or an empty frame) for more than a beat: an Intro that opened on 2.4 s of black read as a broken video. A dark opening has something in it from the first beat: a lamp flickering on the beats, a glow that breathes, the first shape arriving. Black that ends the MV after the last note is fine.
 - **Faces act, they never snap.** Change moods with `ch.emotions()`, which does anticipation, a squint, a take and overshoot around every change.
 - **Characters are big.** In a medium shot a Character stands about 15–20% of the frame's shorter side tall; in chorus and dance Shots the Lead fills about 40% of it. Tiny Characters are for wide establishing Shots only, never a tiny Character in a big empty landscape for the whole MV.
 - **Everything moves on the beat.** Idles, bounces and dances all read the Beat Grid, so the whole film shares the song's pulse, drift and all.

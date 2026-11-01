@@ -18,7 +18,9 @@ Steps (each cached in <song>/.analysis/, so a re-run only redoes what changed):
   5. beats    beat_this finds every beat and bar start on the full mix: the Beat Grid (ADR 0002).
   6. sections lyric.txt's [Section] marks (or blank lines) group the lines; unsung stretches of a bar or more become
               intro / interlude / outro sections, and every section edge is snapped to a bar start when one is near.
-Writes <song>/song.json and <song>/.analysis/check_mix.wav (the song with a click on every beat, for the Song Check).
+Writes <song>/song.json (and the same in song.auto.json) and <song>/.analysis/check_mix.wav (the song with a click on
+every beat, for the Song Check). When <song>/hand_fixes.py exists (tools/song/hand_fixes.py, copied there for the
+person's fixes), it runs it last: it rewrites song.json from song.auto.json with the fixes in.
 """
 import argparse, json, re, subprocess, sys, unicodedata
 from difflib import SequenceMatcher
@@ -351,6 +353,23 @@ def refine(lines, vocals, cache):
     out.write_text(json.dumps({'key': key, 'lines': res}))
 
 
+def spread_zero(lines):
+    """The aligner collapses some tokens to no length (Chinese numerals: 六十二, 第一百, 三千…), so the karaoke would
+    light a run of them at once. Share the time out evenly over the run and the token before it."""
+    for l in lines:
+        T, i = l['tokens'], 0
+        while i < len(T):
+            if T[i][1] - T[i][0] >= .03: i += 1; continue
+            j = i
+            while j < len(T) and T[j][1] - T[j][0] < .03: j += 1
+            a = T[i - 1][0] if i > 0 else T[i][0]                 # the run shares the previous token's slot and its own
+            b = T[j][0] if j < len(T) else max(T[j - 1][1], a + .1 * (j - i + 1))
+            k0 = i - 1 if i > 0 else i
+            for k in range(k0, j): T[k] = [round(a + (b - a) * (k - k0) / (j - k0), 3), round(a + (b - a) * (k - k0 + 1) / (j - k0) - .02, 3)]
+            i = j
+        for t in T: t[1] = max(t[1], round(t[0] + .01, 3))     # a run at a line's start can come out reversed
+
+
 def tidy(lines):
     for a, b in zip(lines, lines[1:]):   # lines never overlap
         if a['end'] > b['start']: a['end'] = b['start'] = round((a['end'] + b['start']) / 2, 3)
@@ -445,6 +464,7 @@ def main():
             lines = time_lines(sections, fixed)
             print(f"[asr] rescued {sum(1 for i in before if lines[i]['confidence'] >= .5)} of {len(before)} unmatched line(s)", flush=True)
     refine(lines, vocals, cache)
+    spread_zero(lines)
     tidy(lines)
     secs, where = make_sections([s[0] for s in sections], lines, grid, dur)
     for l in lines: l['section'] = where[l['section']]   # an index into the final section list
@@ -453,6 +473,9 @@ def main():
             'beats': beats, 'downbeats': grid['downbeats'], 'sections': secs,
             'lines': [{k: l[k] for k in ('start', 'end', 'text', 'section', 'confidence', 'tokens')} for l in lines]}
     (d / 'song.json').write_text(json.dumps(song, ensure_ascii=False, indent=1))
+    # the analysis's own output stays in song.auto.json; song/hand_fixes.py (the person's fixes from the Song Check)
+    # reads it and writes song.json, so a re-run keeps them
+    (d / 'song.auto.json').write_text(json.dumps(song, ensure_ascii=False, indent=1))
     click_mix(audio, grid, cache / 'check_mix.wav')
 
     print(f"\n{audio.name}: {dur:.1f} s, {len(beats)} beats, ~{bpm:.1f} bpm, {len(grid['downbeats'])} bars, language {lang}")
@@ -463,6 +486,9 @@ def main():
             print(f"      {l['start']:7.2f}–{l['end']:7.2f}  {l['confidence']:.2f}  {l['text']}{flag}")
     low = [l for l in lines if l['confidence'] < .5]
     print(f"\nwrote {d / 'song.json'}  ({len(low)} low-confidence line{'s' * (len(low) != 1)})")
+    if (d / 'hand_fixes.py').exists():
+        print('applying the hand fixes (song/hand_fixes.py) …', flush=True)
+        subprocess.run([sys.executable, str(d / 'hand_fixes.py')], check=True)
     # beat_this can put a bar start in a stop-time break or on a pickup: count each bar's beats and list the odd ones
     downs = grid['downbeats']
     counts = [sum(1 for b in beats if a - .03 <= b < z - .03) for a, z in zip(downs, downs[1:])]

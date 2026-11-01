@@ -41,6 +41,7 @@ node engine/build.mjs && open studio.html                       # scrub or play 
 node engine/render.mjs --rough                                  # the Rough Cut (and the Seam check)
 node engine/render.mjs --final                                  # the MV
 python3 tools/shorts/make_short.py --from=2 --to=34 --name=open # a vertical short (needs Pillow)
+python3 tools/publish/thumbnail.py --at=60.9,72                 # cover candidates (1280 × 720)
 python3 tools/publish/description.py --intro=intro.txt          # the YouTube description
 ```
 
@@ -59,6 +60,6 @@ Every render command takes `--mv=<folder>` for an MV kept elsewhere.
 | [engine/](engine/) | Beat grid, timeline, karaoke, acting tools, build and render |
 | [styles/](styles/) | Style Profiles: how paint lands on the frame. [watercolor/](styles/watercolor/STYLE.md), [cel/](styles/cel/STYLE.md), [cutout/](styles/cutout/STYLE.md), [pixel/](styles/pixel/STYLE.md), [paper-theatre/](styles/paper-theatre/STYLE.md), [doodle/](styles/doodle/STYLE.md) |
 | [tools/song/](tools/song/) | The song analysis |
-| [tools/shorts/](tools/shorts/), [tools/publish/](tools/publish/) | A vertical short from the MV; its YouTube description |
+| [tools/shorts/](tools/shorts/), [tools/publish/](tools/publish/) | A vertical short from the MV; its cover; its YouTube description |
 | [examples/clawd/](examples/clawd/) | Clawd, an example character with 31 emotions |
 | `studio.html` | Scrub or play an MV in Chrome |

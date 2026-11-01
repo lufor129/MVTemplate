@@ -1,6 +1,6 @@
 # Making a new Style Profile
 
-Read this when the Brief asks for a look no Style Profile has (GUIDE.md step 0). Make the new profile in this MV's copy, before the Song Check: first a target image the person approves, then the profile, coded toward it.
+Read this when the Brief asks for a look no Style Profile has (GUIDE.md step 0). Make the new profile in this MV's copy, before the Song Check: first a target image the person approves, then the profile, coded toward it. For a target in a profile that already exists, see [An existing profile](#an-existing-profile).
 
 ## A target image, before any code
 
@@ -30,6 +30,10 @@ THE MEDIUM: …
 - **Several looks.** When the person is choosing between looks, make one target for each and show them small, side by side, as the lineup does; a look that can't be told from the others there isn't one yet.
 
 🚦 **Style Target** (GUIDE.md step 0). Change the prompt and make it again until the person approves. Save the approved image as `styles/<name>/target.jpg` (about 1280 px wide) and name it at the top of STYLE.md.
+
+## An existing profile
+
+The person may want to see the look before anything is built even when the profile is already there ("align it first"). Make the target the same way, but paint this MV's world (its setting, light and palette from the Brief, a Lead's rough design if there is one) instead of the style-sample scene, and pass a still from an earlier MV in the same profile as the reference for the medium: the target then stays within what the profile can draw, and the Chapters can be checked against it later. Where the profile's STYLE.md offers choices (cel: clean, even lines, or the swelling brush line), show both side by side, so the person picks with their eyes. Write the choice into mv.json and the Log; the profile itself doesn't change, and there is no Style Sample Gate.
 
 ## The profile
 

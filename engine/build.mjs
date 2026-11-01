@@ -41,6 +41,26 @@ export function topNames(src) {
     for (const part of m[1].split(',')) { const n = part.split('=')[0].split(':').pop().trim().replace(/^\.\.\./, ''); if (n) out.add(n); }
   return out;
 }
+// The names a script declares inside its functions (indented `const`/`let`/`var`, destructuring too), with their
+// line numbers: a Chapter's local `const H = …` hides the canvas height from everything after it in that scope, and
+// every screen-space shape goes NaN with no error.
+export function localNames(src) {
+  const out = [];
+  for (const [ln, line] of src.split('\n').entries()) {
+    if (!/^\s+\S/.test(line)) continue;
+    for (const m of line.matchAll(/\b(?:const|let|var)\s+([^;]*)/g)) {
+      let d = m[1], prev;   // blank out calls, literals and strings, so only the declaration's own commas are left
+      do { prev = d; d = d.replace(/\([^()]*\)|\[[^[\]]*\](?!\s*=)|'[^']*'|"[^"]*"|`[^`]*`/g, '0'); } while (d !== prev);
+      const head = d.match(/^\s*[{[]([^}\]]*)[}\]]/);
+      const names = head ? head[1].split(',').map(p => p.split('=')[0].split(':').pop().trim().replace(/^\.\.\./, ''))
+                         : d.split(',').map(p => (p.match(/^\s*([A-Za-z_$][\w$]*)\s*=/) || [])[1]);
+      for (const n of names) if (n) out.push([n, ln + 1]);
+    }
+  }
+  return out;
+}
+// the engine's values a Chapter reads; a local of the same name in a Chapter file is almost always a mistake
+const SHADOWED = new Set(['W', 'H', 'PAL', 'LIGHT', 'BEAT', 'BAR', 'DUR', 'LINES', 'SECTIONS', 'SONG', 'MV', 'TAU']);
 const jsIn = d => existsSync(d) ? readdirSync(d).filter(f => f.endsWith('.js')).sort().map(f => join(d, f)) : [];
 
 // over: settings that win over mv.json for this build only (render.mjs --style=<name>, for the Style Sample's lineup).
@@ -71,6 +91,12 @@ export function build(mvDir = '.', over = {}) {
     MV.audioPath = null;
   }
   MV.dir = rel(dir) || '.';
+  // mv/plates/ and mv/props/ (optional): pictures painted outside the engine (GPT Image) in the Style Profile's look:
+  // background plates, and props that sit still or only move as a whole (a mic stand, set dressing). MV.plates and MV.sprites map each top-level file's name, without
+  // its extension, to its path; frame.js loads them all before the first frame.
+  const imgs = d => { const p = join(dir, 'mv', d); return Object.fromEntries((existsSync(p) ? readdirSync(p) : [])
+    .filter(f => /\.(png|jpe?g|webp)$/i.test(f)).sort().map(f => [f.replace(/\.[^.]+$/, ''), rel(join(p, f))])); };
+  MV.plates = imgs('plates'); MV.sprites = imgs('props');
   const style = styleOf(MV.style);
   MV.renderer = style.renderer || 'webgl';   // the canvas the profile paints on: 'webgl' or '2d' (frame.js)
   const scripts = [
@@ -95,6 +121,8 @@ export function build(mvDir = '.', over = {}) {
     else taken.set(n, s);
   }
   if (clash.length) throw new Error(`build: rename these top-level names (or move them inside the file's IIFE):\n  ${clash.join('\n  ')}`);
+  const hides = jsIn(join(dir, 'mv', 'chapters')).flatMap(f => localNames(readFileSync(f, 'utf8')).filter(([n]) => SHADOWED.has(n)).map(([n, ln]) => `${rel(f)}:${ln}: a local "${n}" hides the engine's ${n}`));
+  if (hides.length) console.warn(`build: rename these unless the engine's value isn't needed after them in that scope:\n  ${hides.join('\n  ')}`);
   const tags = [
     style.fonts ? `<link rel="stylesheet" href="${style.fonts}">` : '',
     ...scripts.map(s => `<script src="${s}"></script>`),
